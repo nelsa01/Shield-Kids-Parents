@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">Shield Kids</string>
+    <string name="full_name">Full name</string>
+    <string name="email">Email</string>
+    <string name="create_parent_account">Create Parent Account</string>
+    <string name="password_6_chars">Password (≥6 chars)</string>
+    <string name="register">Register</string>
+    <string name="already_have_an_account_login">Already have an account? Login</string>
+    <string name="add_child">Add Child</string>
+    <string name="login">Login</string>
+    <string name="no_account_register">No account? Register</string>
+    <string name="password">Password</string>
+    <string name="your_email">Email</string>
+    <string name="parent_login">Parent Login</string>
+    <string name="save">Save</string>
+    <string name="_4_digit_pin">4-digit PIN</string>
+    <string name="year_of_birth">Year of birth</string>
+    <string name="child_s_name">Child’s name</string>
+    <string name="add_a_child">Add Child</string>
+    <string name="i_am_a_child">I am a Child</string>
+    <string name="i_am_a_parent">I am a Parent</string>
+    <string name="welcome_to_shieldkids">Welcome to ShieldKids</string>
+    <string name="log_in">Login</string>
+    <string name="reference_number">Reference Number</string>
+    <string name="your_name">Your Name</string>
+    <string name="child_login">Child Login</string>
+    <string name="view_children">View Children</string>
+    <string name="default_notification_channel_id">\nNotification Channel</string>
+</resources>

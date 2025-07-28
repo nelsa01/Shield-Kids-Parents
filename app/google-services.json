@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "398145796467",
+    "project_id": "shield-kids101",
+    "storage_bucket": "shield-kids101.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:398145796467:android:9902d59252463a8a16ed06",
+        "android_client_info": {
+          "package_name": "com.shieldtechhub.shieldkids"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHnQnMflimFF7Ie4YRPJL1lrp-HW8ou0U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
