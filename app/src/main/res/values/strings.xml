@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Shield Kid Parents</string>
+    <string name="accessibility_service_description">Blocks selected apps from being opened</string>
 </resources>
