@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Shield Background -->
+    <path
+        android:fillColor="@color/teal_500"
+        android:pathData="M60,20L80,30V50C80,80 70,90 60,95C50,90 40,80 40,50V30L60,20Z"/>
+
+    <!-- Shield Border -->
+    <path
+        android:fillColor="@color/white"
+        android:strokeColor="@color/teal_700"
+        android:strokeWidth="2"
+        android:pathData="M60,20L80,30V50C80,80 70,90 60,95C50,90 40,80 40,50V30L60,20Z"/>
+
+    <!-- Inner Circle -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M60,40C65,40 70,45 70,50C70,55 65,60 60,60C55,60 50,55 50,50C50,45 55,40 60,40Z"/>
+
+    <!-- Lock Icon -->
+    <path
+        android:fillColor="@color/teal_500"
+        android:pathData="M58,45V50H62V45C62,43.9 61.1,43 60,43C58.9,43 58,43.9 58,45ZM56,50V45C56,42.8 57.8,41 60,41C62.2,41 64,42.8 64,45V50H66C67.1,50 68,50.9 68,52V58C68,59.1 67.1,60 66,60H54C52.9,60 52,59.1 52,58V52C52,50.9 52.9,50 54,50H56Z"/>
+
+</vector> 

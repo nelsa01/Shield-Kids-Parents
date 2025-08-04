@@ -2,37 +2,134 @@ package com.shieldtechhub.shieldkids
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.style.StyleSpan
+import android.text.style.ForegroundColorSpan
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.shieldtechhub.shieldkids.databinding.ActivityParentRegisterBinding
 
 class ParentRegisterActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityParentRegisterBinding
-    private val auth = FirebaseAuth.getInstance()
-    private val db   = FirebaseFirestore.getInstance()
-
+    private lateinit var auth: FirebaseAuth
+    private lateinit var firestore: FirebaseFirestore
+    private var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityParentRegisterBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_parent_register)
 
-        binding.btnRegister.setOnClickListener { register() }
-        binding.tvLogin.setOnClickListener {
+        auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
+
+        setupInputFieldFocusListeners()
+        setupPasswordVisibilityToggle()
+        setupClickListeners()
+    }
+
+    private fun setupInputFieldFocusListeners() {
+        val usernameContainer = findViewById<View>(R.id.usernameContainer)
+        val emailContainer = findViewById<View>(R.id.emailContainer)
+        val passwordContainer = findViewById<View>(R.id.passwordContainer)
+        
+        val usernameEditText = findViewById<EditText>(R.id.etUsername)
+        val emailEditText = findViewById<EditText>(R.id.etEmail)
+        val passwordEditText = findViewById<EditText>(R.id.etPassword)
+        
+        val userIcon = findViewById<ImageView>(R.id.ivUserIcon)
+        val usernameIcon = findViewById<ImageView>(R.id.ivUsernameIcon)
+        val lockIcon = findViewById<ImageView>(R.id.ivLockIcon)
+
+        // Username focus listener
+        usernameEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                usernameContainer.setBackgroundResource(R.drawable.input_field_background_focused)
+                usernameEditText.setHintTextColor(ContextCompat.getColor(this, R.color.teal_500))
+                userIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_500))
+            } else {
+                usernameContainer.setBackgroundResource(R.drawable.input_field_background)
+                usernameEditText.setHintTextColor(ContextCompat.getColor(this, R.color.gray_500))
+                userIcon.setColorFilter(ContextCompat.getColor(this, R.color.gray_400))
+            }
+        }
+
+        // Email focus listener
+        emailEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                emailContainer.setBackgroundResource(R.drawable.input_field_background_focused)
+                emailEditText.setHintTextColor(ContextCompat.getColor(this, R.color.teal_500))
+                usernameIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_500))
+            } else {
+                emailContainer.setBackgroundResource(R.drawable.input_field_background)
+                emailEditText.setHintTextColor(ContextCompat.getColor(this, R.color.gray_500))
+                usernameIcon.setColorFilter(ContextCompat.getColor(this, R.color.gray_400))
+            }
+        }
+
+        // Password focus listener
+        passwordEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                passwordContainer.setBackgroundResource(R.drawable.input_field_background_focused)
+                passwordEditText.setHintTextColor(ContextCompat.getColor(this, R.color.teal_500))
+                lockIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_500))
+            } else {
+                passwordContainer.setBackgroundResource(R.drawable.input_field_background)
+                passwordEditText.setHintTextColor(ContextCompat.getColor(this, R.color.gray_500))
+                lockIcon.setColorFilter(ContextCompat.getColor(this, R.color.gray_400))
+            }
+        }
+    }
+
+    private fun setupPasswordVisibilityToggle() {
+        val passwordEditText = findViewById<EditText>(R.id.etPassword)
+        val lockIcon = findViewById<ImageView>(R.id.ivLockIcon)
+
+        lockIcon.setOnClickListener {
+            isPasswordVisible = !isPasswordVisible
+            
+            if (isPasswordVisible) {
+                passwordEditText.inputType = android.text.InputType.TYPE_CLASS_TEXT
+                lockIcon.setImageResource(R.drawable.ic_visibility)
+            } else {
+                passwordEditText.inputType = android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                lockIcon.setImageResource(R.drawable.lock)
+            }
+            
+            // Move cursor to end of text
+            passwordEditText.setSelection(passwordEditText.text.length)
+        }
+    }
+
+    private fun setupClickListeners() {
+        findViewById<View>(R.id.btnRegister).setOnClickListener { register() }
+        findViewById<View>(R.id.tvLogin).setOnClickListener {
             startActivity(Intent(this, ParentLoginActivity::class.java))
             finish()
+        }
+        findViewById<View>(R.id.btnGoogleSignUp).setOnClickListener {
+            Toast.makeText(this, "Google sign-up coming soon", Toast.LENGTH_SHORT).show()
+        }
+        // Terms & Conditions click listener
+        findViewById<View>(R.id.tvTerms).setOnClickListener {
+            Toast.makeText(this, "Terms & Conditions", Toast.LENGTH_SHORT).show()
+        }
+        // Privacy click listener
+        findViewById<View>(R.id.tvPrivacy).setOnClickListener {
+            Toast.makeText(this, "Privacy Policy", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun register() {
-        val name  = binding.etName.text.toString().trim()
-        val email = binding.etEmail.text.toString().trim()
-        val pwd   = binding.etPassword.text.toString().trim()
+        val username = findViewById<EditText>(R.id.etUsername).text.toString().trim()
+        val email = findViewById<EditText>(R.id.etEmail).text.toString().trim()
+        val pwd = findViewById<EditText>(R.id.etPassword).text.toString().trim()
 
-        if (name.isEmpty() || email.isEmpty() || pwd.length < 6) {
+        if (username.isEmpty() || email.isEmpty() || pwd.length < 6) {
             Toast.makeText(this, "Fill all fields & use ≥6 chars for password", Toast.LENGTH_SHORT).show()
             return
         }
@@ -41,14 +138,14 @@ class ParentRegisterActivity : AppCompatActivity() {
             .addOnSuccessListener { res ->
                 val uid = res.user!!.uid
                 val parent = hashMapOf(
-                    "name"  to name,
+                    "username" to username,
                     "email" to email,
-                    "role"  to "parent",
+                    "role" to "parent",
                 )
-                db.collection("users").document(uid)
+                firestore.collection("users").document(uid)
                     .set(parent)
                     .addOnSuccessListener {
-                        Toast.makeText(this, "Parent registered", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Parent registered successfully", Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this, ParentDashboardActivity::class.java))
                         finish()
                     }

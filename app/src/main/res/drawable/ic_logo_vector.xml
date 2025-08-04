@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="60dp"
+    android:height="60dp"
+    android:viewportWidth="60"
+    android:viewportHeight="60">
+    
+    <!-- Shield with proper shield shape -->
+    <path
+        android:fillColor="@color/teal_500"
+        android:strokeColor="@color/white"
+        android:strokeWidth="2"
+        android:pathData="M30,8L42,16V28C42,38 36,42 30,45C24,42 18,38 18,28V16L30,8Z"/>
+    
+    <!-- Letter S - simple shape -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M26,18C28,18 30,20 30,22C30,24 28,26 26,26C24,26 22,24 22,22C22,20 24,18 26,18Z"/>
+    
+    <!-- Letter T - simple shape -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M26,28C28,28 30,30 30,32C30,34 28,36 26,36C24,36 22,34 22,32C22,30 24,28 26,28Z"/>
+    
+    <!-- Letter H - simple shape -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M26,38C28,38 30,40 30,42C30,44 28,46 26,46C24,46 22,44 22,42C22,40 24,38 26,38Z"/>
+
+</vector> 

@@ -1,54 +1,229 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:background="@color/white"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
 
+        <!-- Status Bar Space -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
+
+        <!-- Fingerprint Icon -->
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="24dp"
+            android:src="@drawable/ic_fingerprint_uploaded"
+            android:background="@drawable/fingerprint_background"
+            android:padding="16dp"
+            android:contentDescription="Fingerprint Icon" />
+
+        <!-- Hello Again! Title -->
         <TextView
-            android:text="@string/parent_login"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="32dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="Hello Again!"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etEmail"
-            android:autofillHints="Email"
-            android:hint="@string/your_email"
-            android:inputType="textEmailAddress"
-            android:layout_width="488dp"
-            android:layout_height="48dp"
-            android:layout_marginBottom="16dp"/>
+        <!-- Welcome Back Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Welcome back, You've been missed!"
+            android:textSize="16sp"
+            android:textColor="@color/gray_600"
+            android:layout_marginBottom="40dp" />
 
-        <EditText
-            android:id="@+id/etPassword"
-            android:autofillHints="Password"
-            android:hint="@string/password"
-            android:inputType="textPassword"
-            android:layout_width="488dp"
-            android:layout_height="48dp"
-            android:layout_marginBottom="24dp"/>
+        <!-- Email Input Field -->
+        <LinearLayout
+            android:id="@+id/emailContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/input_field_selector"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical"
+            android:padding="16dp">
 
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:textSize="16sp"
+                android:background="@null"
+                android:textColorHint="@color/hint_text_color_selector"
+                android:textColor="@color/black" />
+
+            <ImageView
+                android:id="@+id/ivUsernameIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/username"
+                android:tint="@color/gray_400"
+                android:layout_marginStart="12dp"
+                android:contentDescription="Username Icon" />
+
+        </LinearLayout>
+
+        <!-- Password Input Field -->
+        <LinearLayout
+            android:id="@+id/passwordContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/input_field_selector"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical"
+            android:padding="16dp">
+
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:textSize="16sp"
+                android:background="@null"
+                android:textColorHint="@color/hint_text_color_selector"
+                android:textColor="@color/black" />
+
+            <ImageView
+                android:id="@+id/ivLockIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/lock"
+                android:tint="@color/gray_400"
+                android:layout_marginStart="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Lock Icon" />
+
+        </LinearLayout>
+
+        <!-- Forgot Password Link -->
+        <TextView
+            android:id="@+id/tvForgotPassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Forgot Password?"
+            android:textColor="@color/teal_500"
+            android:textSize="14sp"
+            android:layout_gravity="end"
+            android:layout_marginBottom="24dp"
+            android:padding="8dp" />
+
+        <!-- Login Button -->
         <Button
             android:id="@+id/btnLogin"
-            android:text="@string/login"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Login"
+            android:textStyle="bold"
+            android:textSize="16sp"
             android:textAllCaps="false"
-            android:layout_width="320dp"
-            android:layout_height="wrap_content"/>
+            android:background="@drawable/button_background"
+            android:textColor="@color/white"
+            android:layout_marginBottom="24dp" />
 
-        <TextView
-            android:id="@+id/tvRegister"
-            android:text="@string/no_account_register"
-            android:textColor="@color/purple_500"
-            android:layout_marginTop="12dp"
-            android:layout_gravity="center_horizontal"
+        <!-- OR Separator -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/gray_300" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="OR"
+                android:textColor="@color/gray_500"
+                android:textSize="14sp"
+                android:layout_marginHorizontal="16dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/gray_300" />
+
+        </LinearLayout>
+
+        <!-- Google Login Button -->
+        <LinearLayout
+            android:id="@+id/btnGoogleLogin"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/google_button_background"
+            android:layout_marginBottom="40dp"
+            android:padding="16dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_google"
+                android:layout_marginEnd="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Login with Google"
+                android:textSize="16sp"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <!-- Registration Prompt -->
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Here? "
+                android:textColor="@color/gray_600"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvRegister"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Register"
+                android:textColor="@color/teal_500"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:padding="4dp" />
+
+        </LinearLayout>
+
     </LinearLayout>
 </ScrollView>
