@@ -96,8 +96,8 @@ class ParentLoginActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, pwd)
             .addOnSuccessListener {
                 Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, ParentDashboardActivity::class.java))
-                finish()
+                startActivity(Intent(this, OnboardingActivity::class.java))
+                finish() // Close splash activity so user can't go back
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, e.localizedMessage, Toast.LENGTH_SHORT).show()

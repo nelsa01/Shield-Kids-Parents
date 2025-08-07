@@ -146,7 +146,7 @@ class ParentRegisterActivity : AppCompatActivity() {
                     .set(parent)
                     .addOnSuccessListener {
                         Toast.makeText(this, "Parent registered successfully", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this, ParentDashboardActivity::class.java))
+                        startActivity(Intent(this, OnboardingActivity::class.java))
                         finish()
                     }
             }

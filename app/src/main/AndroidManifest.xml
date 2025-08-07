@@ -35,6 +35,7 @@
 
         <activity android:name=".RoleSelectionActivity" />
         <activity android:name=".ParentRegisterActivity" />
+        <activity android:name=".OnboardingActivity" />
         <activity android:name=".ParentDashboardActivity" />
         <activity android:name=".ParentLoginActivity" />
         <activity android:name=".AddChildActivity" />
