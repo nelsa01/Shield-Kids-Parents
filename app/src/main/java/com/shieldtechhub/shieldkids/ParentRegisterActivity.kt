@@ -137,46 +137,17 @@ class ParentRegisterActivity : AppCompatActivity() {
         auth.createUserWithEmailAndPassword(email, pwd)
             .addOnSuccessListener { res ->
                 val uid = res.user!!.uid
-                
-                // Create users document
-                val userData = hashMapOf(
-                    "name" to username,
+                val parent = hashMapOf(
+                    "username" to username,
                     "email" to email,
-                    "role" to "Parent"
+                    "role" to "parent",
                 )
-                
-                // Create parents document
-                val parentData = hashMapOf(
-                    "name" to username, // Reference to users doc ID
-                    "children" to listOf<String>() // Empty array initially
-                )
-                
-                // First, create the users document
                 firestore.collection("users").document(uid)
-                    .set(userData)
+                    .set(parent)
                     .addOnSuccessListener {
-                        // Then create the parents document
-                        firestore.collection("parents").add(parentData)
-                            .addOnSuccessListener { documentReference ->
-                                // Send verification email
-                                res.user?.sendEmailVerification()
-                                    ?.addOnSuccessListener {
-                                        Toast.makeText(this, "Registration successful! Please verify your email.", Toast.LENGTH_LONG).show()
-                                        startActivity(Intent(this, VerifyEmailActivity::class.java))
-                                        finish()
-                                    }
-                                    ?.addOnFailureListener { e ->
-                                        Toast.makeText(this, "Registration successful but failed to send verification email: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                                        startActivity(Intent(this, VerifyEmailActivity::class.java))
-                                        finish()
-                                    }
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(this, "Failed to create parent profile: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                            }
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Failed to create user account: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Parent registered successfully", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, OnboardingActivity::class.java))
+                        finish()
                     }
             }
             .addOnFailureListener { e ->

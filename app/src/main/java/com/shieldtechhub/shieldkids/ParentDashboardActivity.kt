@@ -24,15 +24,41 @@ class ParentDashboardActivity : AppCompatActivity() {
             finish()
             return
         }
-        binding.tvWelcome.text = "Welcome, ${user.email}"
 
+        setupClickListeners()
+    }
+
+    private fun setupClickListeners() {
+        // Add Child Button
         binding.btnAddChild.setOnClickListener {
             startActivity(Intent(this, AddChildActivity::class.java))
         }
 
-        binding.btnViewChildren.setOnClickListener {
-            // Placeholder for future implementation
-            Toast.makeText(this, "View Children feature coming soon", Toast.LENGTH_SHORT).show()
+        // Requests Card
+        binding.cardRequests.setOnClickListener {
+            Toast.makeText(this, "Requests feature coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        // Details Link
+        binding.tvDetails.setOnClickListener {
+            Toast.makeText(this, "App usage details coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        // Bottom Navigation
+        binding.navHome.setOnClickListener {
+            // Already on home, no action needed
+        }
+
+        binding.navLocation.setOnClickListener {
+            Toast.makeText(this, "Location feature coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.navLightning.setOnClickListener {
+            Toast.makeText(this, "Lightning feature coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.navSettings.setOnClickListener {
+            Toast.makeText(this, "Settings feature coming soon", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnSettings.setOnClickListener {
