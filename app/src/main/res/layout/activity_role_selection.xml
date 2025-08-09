@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
@@ -39,7 +40,7 @@
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:textColor="@color/teal_500"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="16dp" />
 
             <!-- Description -->
             <TextView
@@ -49,36 +50,82 @@
                 android:textSize="16sp"
                 android:textColor="@color/gray_600"
                 android:lineSpacingExtra="4dp"
-                android:gravity="center"/>
+                android:gravity="center" />
 
         </LinearLayout>
 
-        <!-- Get Started Button -->
+        <!-- Role Selection Buttons -->
         <LinearLayout
-            android:id="@+id/getStartedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:gravity="center"
-            android:background="@drawable/get_started_button_background"
-            android:padding="16dp">
+            android:layout_marginBottom="24dp">
 
-            <!-- Paper Plane Icon -->
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_paper_plane"
-                android:layout_marginEnd="12dp"
-                android:contentDescription="Paper Plane Icon"/>
-
-            <!-- Button Text -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Parent Button -->
+            <LinearLayout
+                android:id="@+id/btnParent"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Get Started"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/teal_500"/>
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:background="@drawable/button_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <!-- Parent Icon -->
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_person"
+                    android:layout_marginEnd="12dp"
+                    android:contentDescription="Parent Icon"
+                    app:tint="@color/white" />
+
+                <!-- Button Text -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I'm a Parent"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"/>
+
+            </LinearLayout>
+
+            <!-- Child Button -->
+            <LinearLayout
+                android:id="@+id/btnChild"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:background="@drawable/get_started_button_background"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <!-- Child Icon -->
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_person"
+                    android:layout_marginEnd="12dp"
+                    android:contentDescription="Child Icon"
+                    app:tint="@color/teal_500" />
+
+                <!-- Button Text -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I'm a Child"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/teal_500"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 

@@ -94,10 +94,19 @@ class ParentLoginActivity : AppCompatActivity() {
         }
 
         auth.signInWithEmailAndPassword(email, pwd)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, ParentDashboardActivity::class.java))
-                finish()
+            .addOnSuccessListener { result ->
+                val user = result.user
+                if (user != null) {
+                    if (user.isEmailVerified) {
+                        Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, ParentDashboardActivity::class.java))
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Please verify your email address first.", Toast.LENGTH_LONG).show()
+                        startActivity(Intent(this, VerifyEmailActivity::class.java))
+                        finish()
+                    }
+                }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, e.localizedMessage, Toast.LENGTH_SHORT).show()
@@ -111,18 +120,10 @@ class ParentLoginActivity : AppCompatActivity() {
 
     private fun forgotPassword() {
         val email = binding.etEmail.text.toString().trim()
-        
-        if (email.isEmpty()) {
-            Toast.makeText(this, "Please enter your email first", Toast.LENGTH_SHORT).show()
-            return
+        val intent = Intent(this, PasswordResetActivity::class.java)
+        if (email.isNotEmpty()) {
+            intent.putExtra("email", email)
         }
-
-        auth.sendPasswordResetEmail(email)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Password reset email sent!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to send reset email: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-            }
+        startActivity(intent)
     }
 }

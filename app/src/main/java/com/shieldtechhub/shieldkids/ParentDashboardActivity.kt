@@ -34,5 +34,9 @@ class ParentDashboardActivity : AppCompatActivity() {
             // Placeholder for future implementation
             Toast.makeText(this, "View Children feature coming soon", Toast.LENGTH_SHORT).show()
         }
+
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
     }
 }
