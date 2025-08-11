@@ -57,26 +57,64 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Add Child Button -->
+            <!-- Your Children Section -->
             <LinearLayout
-                android:id="@+id/btnAddChild"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/button_teal_rounded"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground">
+                android:background="@drawable/card_background"
+                android:padding="16dp"
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="+ Add Child"
-                    android:textColor="@color/white"
+                    android:layout_marginBottom="16dp"
+                    android:text="Your children"
                     android:textSize="16sp"
+                    android:textColor="@color/black"
                     android:textStyle="bold" />
+
+                <!-- Horizontal Scrollable Children List -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/childrenContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <!-- Add Child Button (Teal circle with plus) -->
+                        <LinearLayout
+                            android:id="@+id/btnAddChild"
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/circle_teal_background"
+                            android:orientation="horizontal"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackground">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_add"
+                                android:tint="@color/white"
+                                android:contentDescription="Add Child" />
+
+                        </LinearLayout>
+
+                        <!-- Children will be added here dynamically -->
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
 
             </LinearLayout>
 
@@ -265,4 +303,4 @@
 
     </LinearLayout>
 
-</LinearLayout>
+</LinearLayout> 
