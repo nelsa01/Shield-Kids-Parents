@@ -49,10 +49,16 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun updateIndicators(position: Int) {
-        binding.indicator1.isSelected = position == 0
-        binding.indicator2.isSelected = position == 1
-        binding.indicator3.isSelected = position == 2
-        binding.indicator4.isSelected = position == 3
+        // Update indicator backgrounds based on current position
+        binding.indicator1.background = getDrawable(
+            if (position == 0) R.drawable.indicator_selected else R.drawable.indicator_unselected
+        )
+        binding.indicator2.background = getDrawable(
+            if (position == 1) R.drawable.indicator_selected else R.drawable.indicator_unselected
+        )
+        binding.indicator3.background = getDrawable(
+            if (position == 2) R.drawable.indicator_selected else R.drawable.indicator_unselected
+        )
     }
 
     private fun updateButtons(position: Int) {

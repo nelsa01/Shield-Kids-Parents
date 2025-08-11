@@ -30,8 +30,8 @@
 
             <View
                 android:id="@+id/indicator1"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/indicator_selected" />
 
@@ -44,13 +44,6 @@
 
             <View
                 android:id="@+id/indicator3"
-                android:layout_width="8dp"
-                android:layout_height="8dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/indicator_unselected" />
-
-            <View
-                android:id="@+id/indicator4"
                 android:layout_width="8dp"
                 android:layout_height="8dp"
                 android:background="@drawable/indicator_unselected" />
