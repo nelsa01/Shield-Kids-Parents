@@ -47,5 +47,6 @@
         <activity android:name=".AddDeviceActivity" />
         <activity android:name=".WaitingForSetupActivity" />
         <activity android:name=".DeviceSetupActivity" />
+        <activity android:name=".DeviceSettingsActivity" />
     </application>
 </manifest>

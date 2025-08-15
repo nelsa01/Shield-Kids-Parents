@@ -4,17 +4,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.firestore.FirebaseFirestore
-import com.shieldtechhub.shieldkids.databinding.ActivityDeviceSetupBinding
+import com.shieldtechhub.shieldkids.databinding.ActivityDeviceSettingsBinding
 
-class DeviceSetupActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityDeviceSetupBinding
+class DeviceSettingsActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityDeviceSettingsBinding
     private val db = FirebaseFirestore.getInstance()
     
     private var deviceId: String = ""
@@ -23,7 +21,7 @@ class DeviceSetupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityDeviceSetupBinding.inflate(layoutInflater)
+        binding = ActivityDeviceSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         deviceId = intent.getStringExtra("deviceId") ?: ""
@@ -37,11 +35,11 @@ class DeviceSetupActivity : AppCompatActivity() {
         }
 
         setupUI()
-        loadCurrentSettings()
+        loadDeviceSettings()
     }
 
     private fun setupUI() {
-        binding.tvDeviceName.text = "Setup: $deviceName"
+        binding.tvDeviceName.text = "Device: $deviceName"
         
         // Screen Time Setup
         binding.seekBarScreenTime.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -72,16 +70,18 @@ class DeviceSetupActivity : AppCompatActivity() {
             saveDeviceSettings()
         }
 
-        // Skip Button
-        binding.btnSkipSetup.setOnClickListener {
-            val intent = Intent(this, ChildrenDashboardActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-            startActivity(intent)
+        // Remove Device Button
+        binding.btnRemoveDevice.setOnClickListener {
+            showRemoveDeviceConfirmation()
+        }
+
+        // Back Button
+        binding.btnBack.setOnClickListener {
             finish()
         }
     }
 
-    private fun loadCurrentSettings() {
+    private fun loadDeviceSettings() {
         db.collection("devices").document(deviceId)
             .get()
             .addOnSuccessListener { deviceDoc ->
@@ -155,25 +155,64 @@ class DeviceSetupActivity : AppCompatActivity() {
             )
         )
         
-        // Update device settings and mark as connected
+        // Update device settings
         db.collection("devices").document(deviceId)
-            .update(
-                mapOf(
-                    "settings" to settings,
-                    "isConnected" to true // Device is now connected after setup
-                )
-            )
+            .update("settings", settings)
             .addOnSuccessListener {
-                Toast.makeText(this, "Device setup complete! Child's device is now connected.", Toast.LENGTH_LONG).show()
-                
-                // Navigate back to children dashboard
-                val intent = Intent(this, ChildrenDashboardActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                startActivity(intent)
-                finish()
+                Toast.makeText(this, "Device settings updated successfully!", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to save settings: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun showRemoveDeviceConfirmation() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Remove Device")
+            .setMessage("Are you sure you want to remove '$deviceName'? This action cannot be undone.")
+            .setPositiveButton("Remove") { _, _ ->
+                removeDevice()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun removeDevice() {
+        // Show loading
+        Toast.makeText(this, "Removing device...", Toast.LENGTH_SHORT).show()
+
+        // First, remove device from child's devices HashMap
+        db.collection("children").document(childId)
+            .get()
+            .addOnSuccessListener { childDoc ->
+                if (childDoc.exists()) {
+                    val currentDevices = childDoc.get("devices") as? HashMap<String, String> ?: HashMap()
+                    currentDevices.remove(deviceId)
+                    
+                    // Update child document
+                    childDoc.reference.update("devices", currentDevices)
+                        .addOnSuccessListener {
+                            // Now delete the device document
+                            db.collection("devices").document(deviceId)
+                                .delete()
+                                .addOnSuccessListener {
+                                    Toast.makeText(this, "Device '$deviceName' removed successfully", Toast.LENGTH_SHORT).show()
+                                    // Navigate back to child detail
+                                    finish()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(this, "Failed to delete device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Failed to update child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(this, "Child document not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to get child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
     }
 }

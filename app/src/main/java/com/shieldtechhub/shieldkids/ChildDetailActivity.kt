@@ -104,6 +104,20 @@ class ChildDetailActivity : AppCompatActivity() {
             gravity = android.view.Gravity.CENTER_VERTICAL
             background = resources.getDrawable(R.drawable.rectangle_background, null)
             setPadding(16, 12, 16, 12)
+            
+            // Make the entire device view clickable
+            isClickable = true
+            isFocusable = true
+            foreground = resources.getDrawable(android.R.drawable.list_selector_background, null)
+            
+            setOnClickListener {
+                // Navigate to device settings/edit screen
+                val intent = Intent(this@ChildDetailActivity, DeviceSettingsActivity::class.java)
+                intent.putExtra("deviceId", deviceId)
+                intent.putExtra("deviceName", deviceName)
+                intent.putExtra("childId", childId)
+                startActivity(intent)
+            }
         }
 
         val icon = TextView(this).apply {
@@ -138,24 +152,20 @@ class ChildDetailActivity : AppCompatActivity() {
             ).apply { marginEnd = 12 }
         }
 
-        val removeButton = Button(this).apply {
-            text = "Remove"
-            textSize = 12f
-            background = resources.getDrawable(R.drawable.button_outline_teal, null)
-            setTextColor(ContextCompat.getColor(context, R.color.teal_500))
+        // Add an edit icon to indicate the device is clickable
+        val editIcon = TextView(this).apply {
+            text = "✏️"
+            textSize = 16f
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-            setOnClickListener {
-                showRemoveDeviceConfirmation(deviceId, deviceName)
-            }
         }
 
         deviceView.addView(icon)
         deviceView.addView(nameText)
         deviceView.addView(statusText)
-        deviceView.addView(removeButton)
+        deviceView.addView(editIcon)
         container.addView(deviceView)
     }
 

@@ -11,16 +11,39 @@
         android:padding="16dp">
 
         <!-- Header -->
-        <TextView
-            android:id="@+id/tvDeviceName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Setup Device"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:gravity="center"
-            android:layout_marginBottom="24dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="←"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:background="@drawable/button_outline_teal"
+                android:textColor="@color/teal_500" />
+
+            <TextView
+                android:id="@+id/tvDeviceName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Device Settings"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:gravity="center" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+
+        </LinearLayout>
 
         <!-- Screen Time Setup -->
         <LinearLayout
@@ -234,7 +257,7 @@
                 android:id="@+id/btnSaveSettings"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Save Settings"
+                android:text="Save Changes"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:background="@drawable/button_teal_rounded"
@@ -242,13 +265,13 @@
                 android:layout_marginBottom="16dp" />
 
             <Button
-                android:id="@+id/btnSkipSetup"
+                android:id="@+id/btnRemoveDevice"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:text="Skip for Now"
+                android:text="Remove Device"
                 android:textSize="14sp"
-                android:background="@drawable/button_outline_teal"
-                android:textColor="@color/teal_500" />
+                android:background="@drawable/button_outline_red"
+                android:textColor="@color/error_red" />
 
         </LinearLayout>
 
