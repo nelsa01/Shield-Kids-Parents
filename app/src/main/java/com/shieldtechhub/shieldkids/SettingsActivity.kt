@@ -63,6 +63,13 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // Account section
+        findViewById<View>(R.id.btnPermissions).setOnClickListener {
+            val intent = Intent(this, PermissionRequestActivity::class.java).apply {
+                putExtra("from_settings", true)
+            }
+            startActivity(intent)
+        }
+
         findViewById<View>(R.id.btnNotificationSettings).setOnClickListener {
             Toast.makeText(this, "Notification settings coming soon", Toast.LENGTH_SHORT).show()
         }
@@ -147,7 +154,10 @@ class SettingsActivity : AppCompatActivity() {
     private fun logout() {
         auth.signOut()
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(this, ParentLoginActivity::class.java))
+        val intent = Intent(this, RoleSelectionActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
         finish()
     }
 

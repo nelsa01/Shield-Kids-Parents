@@ -293,6 +293,41 @@
                 android:padding="8dp"
                 android:layout_marginBottom="24dp">
 
+                <!-- Permissions -->
+                <LinearLayout
+                    android:id="@+id/btnPermissions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp"
+                    android:background="?android:attr/selectableItemBackground">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_permissions"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Permissions Icon"
+                        app:tint="@color/teal_500" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Permissions"
+                        android:textSize="16sp"
+                        android:textColor="@color/black" />
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_arrow_forward"
+                        android:contentDescription="Arrow"
+                        app:tint="@color/gray_400" />
+
+                </LinearLayout>
+
                 <!-- Notification Settings -->
                 <LinearLayout
                     android:id="@+id/btnNotificationSettings"

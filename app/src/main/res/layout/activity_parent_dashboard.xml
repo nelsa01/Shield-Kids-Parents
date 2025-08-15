@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:background="@color/gray_100">
+    android:background="@color/gray_100"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
 
     <!-- Top Section with Map and Profile -->
     <RelativeLayout
@@ -220,8 +221,8 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_location"
-                android:tint="@color/gray_500"
-                android:contentDescription="Location" />
+                android:contentDescription="Location"
+                app:tint="@color/gray_500" />
 
         </LinearLayout>
 
@@ -239,14 +240,15 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_lightning"
-                android:tint="@color/gray_500"
-                android:contentDescription="Lightning" />
+                android:contentDescription="Lightning"
+                app:tint="@color/gray_500" />
 
         </LinearLayout>
 
+
         <!-- Settings -->
         <LinearLayout
-            android:id="@+id/navSettings"
+            android:id="@+id/btnSettings"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -258,8 +260,8 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_settings"
-                android:tint="@color/gray_500"
-                android:contentDescription="Settings" />
+                android:contentDescription="Settings"
+                app:tint="@color/gray_500" />
 
         </LinearLayout>
 

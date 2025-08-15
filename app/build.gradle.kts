@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-<<<<<<< HEAD
     alias(libs.plugins.google.gms.google.services)
 
 }
@@ -14,17 +13,6 @@ android {
     defaultConfig {
         applicationId = "com.shieldtechhub.shieldkids"
         minSdk = 24
-=======
-}
-
-android {
-    namespace = "com.shieldtechub.shieldkidsparents"
-    compileSdk = 36
-
-    defaultConfig {
-        applicationId = "com.shieldtechub.shieldkidsparents"
-        minSdk = 29
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -33,6 +21,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            isMinifyEnabled = false
+            versionNameSuffix = "-debug"
+            resValue("string", "app_name", "Shield Kids Debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -50,10 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
-<<<<<<< HEAD
         viewBinding = true
-=======
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
     }
 }
 
@@ -67,19 +58,20 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-<<<<<<< HEAD
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.appcompat)
     implementation(libs.firebase.messaging)
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     
-=======
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
+    // Coroutines for async operations
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    
+    // Lifecycle components
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -87,8 +79,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-<<<<<<< HEAD
 
-=======
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
 }

@@ -7,6 +7,8 @@
         <item name="colorAccent">@color/teal_500</item>
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:fitsSystemWindows">true</item>
     </style>
 =======
 
