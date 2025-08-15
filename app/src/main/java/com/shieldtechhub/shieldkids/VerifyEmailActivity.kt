@@ -114,9 +114,9 @@ class VerifyEmailActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 if (user.isEmailVerified) {
                     // Email verified, go to dashboard
-                    updateStatus("Email verified! Redirecting to dashboard...")
+                    updateStatus("Email verified!")
                     handler.postDelayed({
-                        startActivity(Intent(this, ParentDashboardActivity::class.java))
+                        startActivity(Intent(this, OnboardingActivity::class.java))
                         finish()
                     }, 1500)
                 } else {
@@ -145,12 +145,4 @@ class VerifyEmailActivity : AppCompatActivity() {
         isChecking = false
         handler.removeCallbacksAndMessages(null)
     }
-
-//    @Deprecated("Deprecated in API level 33")
-//    fun onBackPressedDispatcher() {
-////        super.onBackPressed()
-//        // Prevent back button from going to registration
-//        // User must either verify email or go back to login
-//        Toast.makeText(this, "Please verify your email or go back to login", Toast.LENGTH_SHORT).show()
-//    }
 }

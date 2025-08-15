@@ -1,155 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    android:padding="24dp">
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_horizontal"
+    android:background="@color/white">
 
-    <LinearLayout
+    <!-- Device Icon -->
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_device_usage"
+        android:background="@drawable/circle_background"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="Device Icon" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect Your Device"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Instructions -->
+    <TextView
+        android:id="@+id/tvInstructions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:text="Enter the 6-digit linking code from your parent to connect your device"
+        android:textSize="16sp"
+        android:textColor="@color/gray_600"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
 
-        <!-- Header -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="32dp">
+    <!-- Linking Code Input -->
+    <EditText
+        android:id="@+id/etLinkingCode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter 6-digit code"
+        android:inputType="number"
+        android:maxLength="6"
+        android:background="@drawable/edit_text_background"
+        android:padding="16dp"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
 
-            <ImageView
-                android:id="@+id/btnBack"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_arrow_back"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:padding="4dp"
-                android:contentDescription="Back Button" />
+    <!-- Connect Button -->
+    <Button
+        android:id="@+id/btnConnect"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Connect Device"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:background="@drawable/button_teal_rounded"
+        android:textColor="@color/white"
+        android:layout_marginBottom="24dp" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Connect Device"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:gravity="center" />
+    <!-- Status Text -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="16sp"
+        android:textColor="@color/teal_500"
+        android:gravity="center" />
 
-            <View
-                android:layout_width="24dp"
-                android:layout_height="24dp" />
-
-        </LinearLayout>
-
-        <!-- Device Icon -->
-        <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/ic_person"
-            android:background="@drawable/circle_background"
-            android:padding="20dp"
-            android:layout_marginBottom="24dp"
-            android:contentDescription="Device Icon" />
-
-        <!-- Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Connect Your Device"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Subtitle -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Enter the connection code provided by your parent to connect this device."
-            android:textSize="16sp"
-            android:textColor="@color/gray_600"
-            android:gravity="center"
-            android:layout_marginBottom="32dp" />
-
-        <!-- Code Input Field -->
-        <LinearLayout
-            android:id="@+id/codeContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/input_field_selector"
-            android:layout_marginBottom="24dp"
-            android:gravity="center_vertical"
-            android:padding="16dp">
-
-            <EditText
-                android:id="@+id/etConnectionCode"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Enter connection code"
-                android:inputType="textCapCharacters"
-                android:maxLength="8"
-                android:background="@null"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                android:textColorHint="@color/hint_text_color_selector" />
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_lock"
-                android:layout_marginStart="12dp"
-                android:contentDescription="Code Icon"
-                app:tint="@color/gray_400" />
-
-        </LinearLayout>
-
-        <!-- Connect Button -->
-        <Button
-            android:id="@+id/btnConnect"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Connect Device"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:background="@drawable/button_background"
-            android:padding="16dp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Instructions -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/rectangle_background"
-            android:padding="20dp"
-            android:layout_marginBottom="24dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="How to get your connection code:"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="12dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="1. Ask your parent to open the ShieldKids app\n2. Go to Settings > Add Child\n3. Your parent will get a connection code\n4. Enter that code here to connect your device"
-                android:textSize="14sp"
-                android:textColor="@color/gray_600"
-                android:lineSpacingExtra="4dp" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

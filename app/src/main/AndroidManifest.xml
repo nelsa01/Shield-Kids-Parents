@@ -35,12 +35,17 @@
 
         <activity android:name=".RoleSelectionActivity" />
         <activity android:name=".ParentRegisterActivity" />
-        <activity android:name=".VerifyEmailActivity" />
         <activity android:name=".ParentDashboardActivity" />
         <activity android:name=".ParentLoginActivity" />
+        <activity android:name=".OnboardingActivity" />
         <activity android:name=".PasswordResetActivity" />
         <activity android:name=".SettingsActivity" />
         <activity android:name=".AddChildActivity" />
         <activity android:name=".ChildConnectActivity" />
+        <activity android:name=".ChildrenDashboardActivity" />
+        <activity android:name=".ChildDetailActivity" />
+        <activity android:name=".AddDeviceActivity" />
+        <activity android:name=".WaitingForSetupActivity" />
+        <activity android:name=".DeviceSetupActivity" />
     </application>
 </manifest>

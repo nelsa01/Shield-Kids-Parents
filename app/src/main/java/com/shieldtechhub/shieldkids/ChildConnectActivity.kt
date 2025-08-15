@@ -2,101 +2,118 @@ package com.shieldtechhub.shieldkids
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.FirebaseFirestore
+import com.shieldtechhub.shieldkids.databinding.ActivityChildConnectBinding
 
 class ChildConnectActivity : AppCompatActivity() {
-
-    private lateinit var firestore: FirebaseFirestore
-    private lateinit var etConnectionCode: EditText
-    private lateinit var btnConnect: Button
-    private lateinit var codeContainer: View
+    private lateinit var binding: ActivityChildConnectBinding
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_child_connect)
+        binding = ActivityChildConnectBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        firestore = FirebaseFirestore.getInstance()
-
-        // Initialize views
-        etConnectionCode = findViewById(R.id.etConnectionCode)
-        btnConnect = findViewById(R.id.btnConnect)
-        codeContainer = findViewById(R.id.codeContainer)
-
-        // Set up click listeners
-        findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
-        btnConnect.setOnClickListener { connectDevice() }
-
-        // Set up code field focus listener
-        setupCodeFieldFocusListener()
-
-        // Set up code validation
-        setupCodeValidation()
+        setupUI()
     }
 
-    private fun setupCodeFieldFocusListener() {
-        etConnectionCode.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                codeContainer.setBackgroundResource(R.drawable.input_field_background_focused)
-                etConnectionCode.setHintTextColor(ContextCompat.getColor(this, R.color.teal_500))
-            } else {
-                codeContainer.setBackgroundResource(R.drawable.input_field_background)
-                etConnectionCode.setHintTextColor(ContextCompat.getColor(this, R.color.gray_500))
+    private fun setupUI() {
+        binding.tvTitle.text = "Connect Your Device"
+        binding.tvInstructions.text = "Enter the 6-digit linking code from your parent to connect your device"
+
+        binding.btnConnect.setOnClickListener {
+            val linkingCode = binding.etLinkingCode.text.toString().trim()
+            
+            if (linkingCode.isEmpty()) {
+                Toast.makeText(this, "Please enter the linking code", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (linkingCode.length != 6) {
+                Toast.makeText(this, "Linking code must be 6 digits", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            connectDevice(linkingCode)
+        }
+    }
+
+    private fun connectDevice(linkingCode: String) {
+        // Find device with this linking code
+        db.collection("devices")
+            .whereEqualTo("linkingCode", linkingCode.toInt())
+            .get()
+            .addOnSuccessListener { devicesSnap ->
+                if (!devicesSnap.isEmpty) {
+                    val deviceDoc = devicesSnap.documents[0]
+                    val deviceId = deviceDoc.id
+                    
+                    // Check if device is already connected
+                    val isConnected = deviceDoc.getBoolean("isConnected") ?: false
+                    
+                    if (isConnected) {
+                        // Device is already connected
+                        Toast.makeText(this, "Device is already connected!", Toast.LENGTH_LONG).show()
+                        binding.tvStatus.text = "Device Already Connected!"
+                        binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
+                        binding.btnConnect.isEnabled = false
+                        binding.etLinkingCode.isEnabled = false
+                    } else {
+                        // Device found but not connected yet - show waiting message
+                        Toast.makeText(this, "Device found! Waiting for parent to complete setup...", Toast.LENGTH_LONG).show()
+                        binding.tvStatus.text = "Device Found! Waiting for parent to complete setup..."
+                        binding.tvStatus.setTextColor(resources.getColor(R.color.orange, null))
+                        binding.btnConnect.isEnabled = false
+                        binding.etLinkingCode.isEnabled = false
+                        
+                        // Start monitoring device status
+                        startDeviceStatusMonitoring(deviceId)
+                    }
+                } else {
+                    Toast.makeText(this, "Invalid linking code", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error connecting: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun startDeviceStatusMonitoring(deviceId: String) {
+        // Monitor device status until it's connected
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                db.collection("devices").document(deviceId)
+                    .get()
+                    .addOnSuccessListener { deviceDoc ->
+                        if (deviceDoc.exists()) {
+                            val isConnected = deviceDoc.getBoolean("isConnected") ?: false
+                            if (isConnected) {
+                                // Device is now connected!
+                                binding.tvStatus.text = "Device Connected Successfully!"
+                                binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
+                                
+                                // Navigate back after a delay
+                                handler.postDelayed({
+                                    finish()
+                                }, 2000)
+                            } else {
+                                // Still waiting, check again in 2 seconds
+                                handler.postDelayed(this, 2000)
+                            }
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        // Error checking, try again in 2 seconds
+                        handler.postDelayed(this, 2000)
+                    }
             }
         }
-    }
-
-    private fun setupCodeValidation() {
-        etConnectionCode.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                validateConnectionCode()
-            }
-        })
-    }
-
-    private fun validateConnectionCode(): Boolean {
-        val code = etConnectionCode.text.toString().trim()
-        
-        return if (code.isEmpty()) {
-            etConnectionCode.error = "Connection code is required"
-            false
-        } else if (code.length < 6) {
-            etConnectionCode.error = "Connection code must be at least 6 characters"
-            false
-        } else {
-            etConnectionCode.error = null
-            true
-        }
-    }
-
-    private fun connectDevice() {
-        val connectionCode = etConnectionCode.text.toString().trim().uppercase()
-
-        if (!validateConnectionCode()) {
-            return
-        }
-
-        // Disable button and show loading state
-        btnConnect.isEnabled = false
-        btnConnect.text = "Connecting..."
-
-        // For now, we'll just show a success message and navigate to child dashboard
-        // In the future, this should validate the connection code against the database
-        Toast.makeText(this, "Device connected successfully!", Toast.LENGTH_LONG).show()
-        
-//        // Navigate to child dashboard
-//        val intent = Intent(this, ChildDashboardActivity::class.java)
-//        intent.putExtra("CONNECTION_CODE", connectionCode)
-//        startActivity(intent)
-//        finish()
+        handler.post(runnable)
     }
 }

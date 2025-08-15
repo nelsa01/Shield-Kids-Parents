@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gray_100">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <TextView
+            android:id="@+id/tvDeviceName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Setup Device"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Screen Time Setup -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/card_background"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Screen Time Limit"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="16dp" />
+
+            <SeekBar
+                android:id="@+id/seekBarScreenTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="24"
+                android:progress="8"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvScreenTimeValue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="8 hours"
+                android:textSize="16sp"
+                android:textColor="@color/teal_500"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- Geofence Setup -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/card_background"
+            android:layout_marginBottom="16dp">
+
+            <CheckBox
+                android:id="@+id/cbGeofence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable Location Tracking (Geofence)"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:id="@+id/geofenceContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Safe Zones:"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Home: 123 Main St"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• School: 456 School Ave"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Content Filter Setup -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/card_background"
+            android:layout_marginBottom="16dp">
+
+            <CheckBox
+                android:id="@+id/cbContentFilter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable Content Filtering"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:id="@+id/contentFilterContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Blocked Categories:"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Violence"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Adult Content"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Gambling"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- App Restrictions Setup -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/card_background"
+            android:layout_marginBottom="16dp">
+
+            <CheckBox
+                android:id="@+id/cbAppRestrictions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable App Restrictions"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:id="@+id/appRestrictionsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Blocked Apps:"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Gaming Apps"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• Social Media"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="24dp">
+
+            <Button
+                android:id="@+id/btnSaveSettings"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Save Settings"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/button_teal_rounded"
+                android:textColor="@color/white"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btnSkipSetup"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Skip for Now"
+                android:textSize="14sp"
+                android:background="@drawable/button_outline_teal"
+                android:textColor="@color/teal_500"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Remove Device Button -->
+            <Button
+                android:id="@+id/btnRemoveDevice"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Remove Device"
+                android:textSize="14sp"
+                android:background="@drawable/button_outline_red"
+                android:textColor="@color/error_red" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

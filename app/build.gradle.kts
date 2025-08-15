@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.appcompat)
     implementation(libs.firebase.messaging)
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
