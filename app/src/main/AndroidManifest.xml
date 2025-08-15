@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"
@@ -37,12 +35,18 @@
 
         <activity android:name=".RoleSelectionActivity" />
         <activity android:name=".ParentRegisterActivity" />
-        <activity android:name=".OnboardingActivity" />
         <activity android:name=".ParentDashboardActivity" />
         <activity android:name=".ParentLoginActivity" />
+        <activity android:name=".OnboardingActivity" />
+        <activity android:name=".PasswordResetActivity" />
+        <activity android:name=".SettingsActivity" />
         <activity android:name=".AddChildActivity" />
+        <activity android:name=".ChildConnectActivity" />
         <activity android:name=".ChildrenDashboardActivity" />
-        <activity android:name=".ChildLoginActivity" />
-        <activity android:name=".ChildDashboardActivity" />
+        <activity android:name=".ChildDetailActivity" />
+        <activity android:name=".AddDeviceActivity" />
+        <activity android:name=".WaitingForSetupActivity" />
+        <activity android:name=".DeviceSetupActivity" />
+        <activity android:name=".DeviceSettingsActivity" />
     </application>
 </manifest>
