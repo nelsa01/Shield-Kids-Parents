@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- Allow the admin to lock the device -->
+        <force-lock />
+        
+        <!-- Allow the admin to wipe the device's data -->
+        <wipe-data />
+        
+        <!-- Allow the admin to limit passwords -->
+        <limit-password />
+        
+        <!-- Allow the admin to watch login attempts -->
+        <watch-login />
+        
+        <!-- Allow the admin to reset passwords -->
+        <reset-password />
+        
+        <!-- Allow the admin to expire passwords -->
+        <expire-password />
+        
+        <!-- Allow the admin to disable cameras -->
+        <disable-camera />
+        
+        <!-- Allow the admin to disable keyguard features -->
+        <disable-keyguard-features />
+    </uses-policies>
+</device-admin>

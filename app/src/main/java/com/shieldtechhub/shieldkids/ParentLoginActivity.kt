@@ -99,7 +99,7 @@ class ParentLoginActivity : AppCompatActivity() {
 				if (user != null) {
 					if (user.isEmailVerified) {
 						Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show()
-						startActivity(Intent(this, ChildrenDashboardActivity::class.java))
+						startActivity(Intent(this, ParentDashboardActivity::class.java))
 						finish()
 					} else {
 						Toast.makeText(this, "Please verify your email address first.", Toast.LENGTH_LONG).show()

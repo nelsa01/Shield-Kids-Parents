@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:background="@color/gray_100"
-    android:layout_height="20dp"
-    android:layout_width="20dp">
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
 
     <!-- Top Section with Map and Profile -->
     <RelativeLayout
@@ -244,6 +244,7 @@
                 app:tint="@color/gray_500" />
 
         </LinearLayout>
+
 
         <!-- Settings -->
         <LinearLayout

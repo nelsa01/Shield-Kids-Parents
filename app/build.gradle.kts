@@ -21,6 +21,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            isMinifyEnabled = false
+            versionNameSuffix = "-debug"
+            resValue("string", "app_name", "Shield Kids Debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -57,6 +63,14 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.firebase.messaging)
     implementation("androidx.viewpager2:viewpager2:1.0.0")
+    
+    // Coroutines for async operations
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    
+    // Lifecycle components
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -21,4 +21,16 @@
     
     <!-- Error color for validation -->
     <color name="error_red">#FFE53935</color>
+    
+    <!-- Orange color for warnings -->
+    <color name="orange">#FFFF9800</color>
+    
+    <!-- Additional grays -->
+    <color name="gray_700">#FF616161</color>
+    <color name="gray_200">#FFEEEEEE</color>
+    
+    <!-- Status colors -->
+    <color name="green_500">#FF4CAF50</color>
+    <color name="red_500">#FFF44336</color>
+    <color name="orange_light">#FFFFF3E0</color>
 </resources>

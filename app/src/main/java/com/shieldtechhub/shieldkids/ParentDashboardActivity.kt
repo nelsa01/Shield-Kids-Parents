@@ -14,16 +14,29 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.shieldtechhub.shieldkids.common.utils.PermissionManager
 import com.shieldtechhub.shieldkids.databinding.ActivityParentDashboardBinding
 
 class ParentDashboardActivity : AppCompatActivity() {
     private lateinit var binding: ActivityParentDashboardBinding
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+    private lateinit var permissionManager: PermissionManager
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Ensure proper system UI visibility - prevent fullscreen overlap
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            )
+        }
+        
         binding = ActivityParentDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -34,8 +47,10 @@ class ParentDashboardActivity : AppCompatActivity() {
             return
         }
 
+        permissionManager = PermissionManager(this)
         setupClickListeners()
         loadChildren()
+        checkCriticalPermissions()
     }
 
     override fun onResume() {
@@ -306,6 +321,29 @@ class ParentDashboardActivity : AppCompatActivity() {
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+    }
+    
+    private fun checkCriticalPermissions() {
+        if (!permissionManager.checkCriticalPermissionsOnAppStart()) {
+            val missingCount = permissionManager.getMissingEssentialPermissions().size
+            if (missingCount > 0) {
+                showPermissionPrompt(missingCount)
+            }
+        }
+    }
+    
+    private fun showPermissionPrompt(missingCount: Int) {
+        // Show a subtle prompt after a delay to not overwhelm the user immediately
+        binding.root.postDelayed({
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Setup Required")
+                .setMessage("Shield Kids needs $missingCount essential permissions to protect your children effectively. Would you like to set them up now?")
+                .setPositiveButton("Setup Permissions") { _, _ ->
+                    startActivity(Intent(this, PermissionRequestActivity::class.java))
+                }
+                .setNegativeButton("Later", null)
+                .show()
+        }, 3000) // 3 second delay
     }
     
     data class Child(
