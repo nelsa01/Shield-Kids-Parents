@@ -14,12 +14,14 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.databinding.ActivityAddChildBinding
 import com.shieldtechhub.shieldkids.SecurityUtils
+import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import java.util.Calendar
 
 class AddChildActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAddChildBinding
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+    private lateinit var deviceStateManager: DeviceStateManager
     private var selectedImageUri: Uri? = null
 
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -34,6 +36,8 @@ class AddChildActivity : AppCompatActivity() {
         binding = ActivityAddChildBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        deviceStateManager = DeviceStateManager(this)
+        
         setupInputFieldFocusListeners()
         setupCalendarPicker()
         setupImageSelection()
@@ -244,12 +248,49 @@ class AddChildActivity : AppCompatActivity() {
         }
 
         val parentUid = auth.currentUser?.uid ?: return
-        val parentEmail = auth.currentUser?.email ?: ""
-
+        
         // Generate and store hashed reference number
         val refNumber = SecurityUtils.generateRefNumber()
         val refNumberHash = SecurityUtils.hashRefNumber(refNumber)
 
+        // First, ensure parent document exists
+        ensureParentDocumentExists(parentUid) { parentDocRef ->
+            // Now create the child
+            createChildDocument(name, year, parentUid, refNumberHash, parentDocRef)
+        }
+    }
+
+    private fun ensureParentDocumentExists(parentUid: String, onSuccess: (String) -> Unit) {
+        // Check if parent document already exists
+        db.collection("parents")
+            .whereEqualTo("name", parentUid)
+            .get()
+            .addOnSuccessListener { parentSnap ->
+                if (!parentSnap.isEmpty) {
+                    // Parent exists, return its ID
+                    onSuccess(parentSnap.documents[0].id)
+                } else {
+                    // Create new parent document
+                    val parentData = hashMapOf(
+                        "name" to parentUid,
+                        "children" to HashMap<String, String>()
+                    )
+                    db.collection("parents").add(parentData)
+                        .addOnSuccessListener { docRef ->
+                            onSuccess(docRef.id)
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Failed to create parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to check parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun createChildDocument(name: String, year: Int, parentUid: String, refNumberHash: String, parentDocId: String) {
+        // Check for reference number conflict
         db.collection("children")
             .whereEqualTo("refNumberHash", refNumberHash)
             .get()
@@ -259,35 +300,68 @@ class AddChildActivity : AppCompatActivity() {
                     return@addOnSuccessListener
                 }
 
+                // Create child document
                 val child = hashMapOf(
                     "name" to name,
-                    "yearOfBirth" to year,
-                    "parentUid" to parentUid,
+                    "birthYear" to year,
+                    "parent" to hashMapOf(
+                        "docID" to parentUid,
+                        "name" to (auth.currentUser?.email ?: "")
+                    ),
+                    "devices" to hashMapOf<String, String>(),
                     "refNumberHash" to refNumberHash,
-                    "devices" to listOf<String>(),
                     "profileImageUri" to (selectedImageUri?.toString() ?: "")
                 )
 
-                db.collection("children")
-                    .add(child)
-                    .addOnSuccessListener { docRef ->
-                        db.collection("users").document(parentUid)
-                            .update("children", FieldValue.arrayUnion(docRef.id))
-                            .addOnSuccessListener {
-                                // Show notification and send email
-                                Toast.makeText(
-                                    this,
-                                    "Child added! Reference number: $refNumber",
-                                    Toast.LENGTH_LONG
-                                ).show()
-
-                                // Navigate to Children Dashboard
-                                val intent = Intent(this, ChildrenDashboardActivity::class.java)
-                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                startActivity(intent)
-                                finish()
-                            }
+                db.collection("children").add(child)
+                    .addOnSuccessListener { childDocRef ->
+                        // Update parent's children HashMap
+                        updateParentChildren(parentDocId, childDocRef.id, name, parentUid)
                     }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Failed to add child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
+            }
+    }
+
+    private fun updateParentChildren(parentDocId: String, childDocId: String, childName: String, parentUid: String) {
+        // Get the parent document and update its children HashMap
+        db.collection("parents").document(parentDocId)
+            .get()
+            .addOnSuccessListener { parentDoc ->
+                if (parentDoc.exists()) {
+                    val currentChildren = parentDoc.get("children") as? HashMap<String, String> ?: HashMap()
+                    currentChildren[childDocId] = childName
+                    
+                    // Update the parent document
+                    parentDoc.reference.update("children", currentChildren)
+                        .addOnSuccessListener {
+                            // Success! Set this device as a child device
+                            val parentEmail = auth.currentUser?.email ?: ""
+                            deviceStateManager.setAsChildDevice(
+                                childId = childDocId,
+                                childName = childName,
+                                parentId = parentUid,
+                                parentEmail = parentEmail
+                            )
+                            
+                            Toast.makeText(this, "Child device linked successfully!", Toast.LENGTH_SHORT).show()
+                            
+                            // Navigate directly to child mode since this device is now linked as child
+                            val intent = Intent(this, ChildModeActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
+                            finish()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Failed to update parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(this, "Parent document not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to get parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
     }
     

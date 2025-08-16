@@ -28,7 +28,11 @@
     
     <!-- Additional grays -->
     <color name="gray_700">#FF616161</color>
+    <color name="gray_800">#FF424242</color>
     <color name="gray_200">#FFEEEEEE</color>
+    
+    <!-- Teal colors -->
+    <color name="teal_600">#FF00796B</color>
     
     <!-- Status colors -->
     <color name="green_500">#FF4CAF50</color>

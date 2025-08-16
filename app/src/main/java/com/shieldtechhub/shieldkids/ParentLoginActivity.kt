@@ -9,16 +9,20 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.shieldtechhub.shieldkids.databinding.ActivityParentLoginBinding
 import com.shieldtechhub.shieldkids.ParentDashboardActivity
+import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 
 class ParentLoginActivity : AppCompatActivity() {
 
 	private lateinit var binding: ActivityParentLoginBinding
 	private val auth = FirebaseAuth.getInstance()
+	private lateinit var deviceStateManager: DeviceStateManager
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		binding = ActivityParentLoginBinding.inflate(layoutInflater)
 		setContentView(binding.root)
+
+		deviceStateManager = DeviceStateManager(this)
 
 		// Set up click listeners
 		binding.btnLogin.setOnClickListener { login() }
@@ -98,6 +102,9 @@ class ParentLoginActivity : AppCompatActivity() {
 				val user = result.user
 				if (user != null) {
 					if (user.isEmailVerified) {
+						// Set this device as a parent device
+						deviceStateManager.setAsParentDevice(user.uid, user.email ?: "")
+						
 						Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show()
 						startActivity(Intent(this, ParentDashboardActivity::class.java))
 						finish()
