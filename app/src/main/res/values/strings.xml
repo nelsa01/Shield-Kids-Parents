@@ -1,5 +1,4 @@
 <resources>
-<<<<<<< HEAD
     <string name="app_name">Shield Kids</string>
     <string name="full_name">Full name</string>
     <string name="email">Email</string>
@@ -27,7 +26,5 @@
     <string name="child_login">Child Login</string>
     <string name="view_children">View Children</string>
     <string name="default_notification_channel_id">\nNotification Channel</string>
-=======
-    <string name="app_name">Shield Kid Parents</string>
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
+    <string name="accessibility_service_description">Shield Kids uses this accessibility service to monitor app usage and enforce parental controls. This service can detect when apps are launched and block access to restricted apps to keep your child safe.</string>
 </resources>

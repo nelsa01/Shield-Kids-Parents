@@ -97,6 +97,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- Shield Accessibility Service for App Blocking -->
+        <service
+            android:name=".features.app_blocking.ShieldAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
         <activity android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.ShieldKids">
@@ -124,5 +137,6 @@
         <activity android:name=".DeviceAdminSetupActivity" />
         <activity android:name=".SystemTestActivity" />
         <activity android:name=".PermissionRequestActivity" />
+        <activity android:name=".AppListActivity" />
     </application>
 </manifest>

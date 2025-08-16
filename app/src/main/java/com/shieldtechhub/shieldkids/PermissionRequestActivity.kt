@@ -182,10 +182,7 @@ class PermissionRequestActivity : AppCompatActivity() {
     }
 
     private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, 
-                                       android.os.Process.myUid(), packageName)
-        return mode == AppOpsManager.MODE_ALLOWED
+        return permissionManager.checkPermissionStatus(android.Manifest.permission.PACKAGE_USAGE_STATS) == PermissionStatus.GRANTED
     }
 
     private fun showSpecialPermissionDialog(title: String, message: String, intent: Intent) {

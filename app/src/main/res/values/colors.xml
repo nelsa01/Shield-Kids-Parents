@@ -18,6 +18,7 @@
     
     <!-- Teal colors for focused states -->
     <color name="teal_50">#FFE0F2F1</color>
+    <color name="teal_100">#FFB2DFDB</color>
     
     <!-- Error color for validation -->
     <color name="error_red">#FFE53935</color>

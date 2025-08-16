@@ -47,7 +47,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupSettingsMenuListeners() {
         // General section
         findViewById<View>(R.id.btnApps).setOnClickListener {
-            Toast.makeText(this, "Apps settings coming soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, AppListActivity::class.java))
         }
 
         findViewById<View>(R.id.btnInternet).setOnClickListener {
