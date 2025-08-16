@@ -45,23 +45,76 @@ class ChildrenDashboardActivity : AppCompatActivity() {
     private fun loadChildren() {
         val parentUid = auth.currentUser?.uid ?: return
         
-        db.collection("children")
-            .whereEqualTo("parentUid", parentUid)
+        // First try to find children in the parents collection
+        db.collection("parents")
+            .whereEqualTo("name", parentUid)
             .get()
-            .addOnSuccessListener { documents ->
-                displayChildren(documents.documents.mapNotNull { doc ->
-                    doc.data?.let { data ->
-                        Child(
-                            id = doc.id,
-                            name = data["name"] as? String ?: "",
-                            yearOfBirth = data["yearOfBirth"] as? Long ?: 0,
-                            profileImageUri = data["profileImageUri"] as? String ?: ""
-                        )
+            .addOnSuccessListener { parentSnap ->
+                if (!parentSnap.isEmpty) {
+                    val parentDoc = parentSnap.documents[0]
+                    val childrenMap = parentDoc.get("children") as? HashMap<String, String> ?: HashMap()
+                    
+                    if (childrenMap.isNotEmpty()) {
+                        // Load child details from children collection
+                        val childrenList = mutableListOf<Child>()
+                        var loadedCount = 0
+                        
+                        childrenMap.forEach { (childId, childName) ->
+                            db.collection("children").document(childId)
+                                .get()
+                                .addOnSuccessListener { childDoc ->
+                                    if (childDoc.exists()) {
+                                        val birthYear = childDoc.getLong("birthYear") ?: 0
+                                        val profileImageUri = childDoc.getString("profileImageUri") ?: ""
+                                        
+                                        childrenList.add(Child(
+                                            id = childId,
+                                            name = childName,
+                                            yearOfBirth = birthYear,
+                                            profileImageUri = profileImageUri
+                                        ))
+                                    } else {
+                                        // Fallback to just the name if child doc doesn't exist
+                                        childrenList.add(Child(
+                                            id = childId,
+                                            name = childName,
+                                            yearOfBirth = 0,
+                                            profileImageUri = ""
+                                        ))
+                                    }
+                                    
+                                    loadedCount++
+                                    if (loadedCount == childrenMap.size) {
+                                        displayChildren(childrenList)
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    // Fallback to just the name if loading fails
+                                    childrenList.add(Child(
+                                        id = childId,
+                                        name = childName,
+                                        yearOfBirth = 0,
+                                        profileImageUri = ""
+                                    ))
+                                    
+                                    loadedCount++
+                                    if (loadedCount == childrenMap.size) {
+                                        displayChildren(childrenList)
+                                    }
+                                }
+                        }
+                    } else {
+                        // No children in the HashMap
+                        displayChildren(emptyList())
                     }
-                })
+                } else {
+                    // No parent document found - this means no children have been added yet
+                    displayChildren(emptyList())
+                }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error loading children: ${e.message}", Toast.LENGTH_SHORT).show()
+                displayChildren(emptyList())
             }
     }
 
@@ -106,9 +159,13 @@ class ChildrenDashboardActivity : AppCompatActivity() {
             scaleType = ImageView.ScaleType.CENTER_CROP
             contentDescription = "Child: ${child.name}"
             
-            // Add click listener to view child details
+            // Open child detail screen
             setOnClickListener {
-                Toast.makeText(this@ChildrenDashboardActivity, "Viewing ${child.name}", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this@ChildrenDashboardActivity, ChildDetailActivity::class.java)
+                intent.putExtra("childId", child.id)
+                intent.putExtra("childName", child.name)
+                intent.putExtra("profileImageUri", child.profileImageUri)
+                startActivity(intent)
             }
         }
         
@@ -145,7 +202,7 @@ class ChildrenDashboardActivity : AppCompatActivity() {
         }
 
         binding.navSettings.setOnClickListener {
-            Toast.makeText(this, "Settings feature coming soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
     

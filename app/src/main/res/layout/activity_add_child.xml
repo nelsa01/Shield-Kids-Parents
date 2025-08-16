@@ -1,159 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/white"
     android:padding="24dp">
 
-    <!-- Header Title -->
-    <TextView
-        android:text="Add a Child"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        android:layout_gravity="center"
-        android:layout_marginBottom="32dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
-    <!-- Profile Photo Section -->
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_gravity="center"
-        android:layout_marginBottom="32dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-        <!-- Circular Profile Frame -->
-        <RelativeLayout
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_gravity="center"
-            android:background="@drawable/profile_circle_border"
-            android:padding="4dp">
-
-            <!-- Profile Image -->
-            <ImageView
-                android:id="@+id/ivProfilePhoto"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/kid"
-                android:scaleType="centerCrop"
-                android:background="@drawable/circle_background"
-                android:contentDescription="Child Profile Photo" />
-
-            <!-- Edit Icon Overlay -->
-            <ImageView
-                android:id="@+id/ivEditPhoto"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentBottom="true"
-                android:src="@drawable/ic_edit_photo"
-                android:background="@drawable/circle_teal_background"
-                android:padding="4dp"
-                android:contentDescription="Edit Photo" />
-
-        </RelativeLayout>
-
-        <!-- Choose Photo Text -->
         <TextView
+            android:text="@string/add_a_child"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Choose a photo"
-            android:textSize="14sp"
-            android:textColor="@color/gray_500"
-            android:layout_gravity="center"
-            android:layout_marginTop="8dp" />
+            android:layout_height="wrap_content"/>
 
-    </LinearLayout>
-
-    <!-- Input Fields -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="32dp">
-
-        <!-- Name Field -->
-        <LinearLayout
-            android:id="@+id/nameFieldContainer"
+        <EditText
+            android:id="@+id/etName"
+            android:autofillHints="Name"
+            android:hint="@string/child_s_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/input_field_selector"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp"
-            android:gravity="center_vertical">
+            android:layout_marginBottom="12dp"
+            android:inputType="textPersonName" />
 
-            <EditText
-                android:id="@+id/etName"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Name"
-                android:textColorHint="@color/hint_text_color_selector"
-                android:textSize="16sp"
-                android:background="@android:color/transparent"
-                android:inputType="textPersonName"
-                android:autofillHints="Name" />
-
-            <ImageView
-                android:id="@+id/ivNameIcon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/user"
-                android:tint="@color/icon_tint_selector"
-                android:contentDescription="Name Icon" />
-
-        </LinearLayout>
-
-        <!-- Year of Birth Field -->
-        <LinearLayout
-            android:id="@+id/yearFieldContainer"
+        <EditText
+            android:id="@+id/etYear"
+            android:autofillHints="YOB"
+            android:hint="@string/year_of_birth"
+            android:inputType="number"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/input_field_selector"
-            android:padding="16dp"
-            android:gravity="center_vertical">
+            android:layout_marginBottom="24dp"/>
 
-            <EditText
-                android:id="@+id/etYear"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Year of birth"
-                android:textColorHint="@color/hint_text_color_selector"
-                android:textSize="16sp"
-                android:background="@android:color/transparent"
-                android:inputType="number"
-                android:autofillHints="YOB" />
-
-            <ImageView
-                android:id="@+id/ivYearIcon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/arrowdown"
-                android:tint="@color/icon_tint_selector"
-                android:contentDescription="Calendar Icon" />
-
-        </LinearLayout>
-
+        <Button
+            android:id="@+id/btnSave"
+            android:text="@string/save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
-
-    <!-- Save Button -->
-    <Button
-        android:id="@+id/btnSave"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Save"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:background="@drawable/button_teal_rounded"
-        android:textAllCaps="false"
-        android:layout_marginTop="0dp" />
-
-</LinearLayout>
+</ScrollView>

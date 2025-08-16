@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <!-- Device Icon -->
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_device_usage"
+        android:background="@drawable/circle_background"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="Device Icon" />
+
+    <!-- Device Name -->
+    <TextView
+        android:id="@+id/tvDeviceName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Device Name"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Linking Code Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginBottom="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Linking Code"
+            android:textSize="16sp"
+            android:textColor="@color/gray_600"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvLinkingCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="123456"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="@color/teal_500"
+            android:background="@drawable/rectangle_background"
+            android:padding="16dp"
+            android:minWidth="120dp"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Instructions -->
+    <TextView
+        android:id="@+id/tvInstructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Share this code with your child to connect their device"
+        android:textSize="16sp"
+        android:textColor="@color/gray_600"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Status -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Waiting for child to connect device..."
+        android:textSize="16sp"
+        android:textColor="@color/teal_500"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Back Button (initially hidden) -->
+    <Button
+        android:id="@+id/btnBackToChildren"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Back to Children"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:background="@drawable/button_teal_rounded"
+        android:textColor="@color/white"
+        android:visibility="gone" />
+
+    <!-- Setup Device Button -->
+    <Button
+        android:id="@+id/btnSetupDevice"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Setup Device"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:background="@drawable/button_outline_teal"
+        android:textColor="@color/teal_500"
+        android:layout_marginTop="16dp" />
+
+    <!-- Remove Device Button -->
+    <Button
+        android:id="@+id/btnRemoveDevice"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Remove Device"
+        android:textSize="14sp"
+        android:background="@drawable/button_outline_red"
+        android:textColor="@color/error_red"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
