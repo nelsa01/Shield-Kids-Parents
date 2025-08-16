@@ -9,11 +9,13 @@ import android.text.style.StyleSpan
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.shieldtechhub.shieldkids.common.utils.PermissionManager
+import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 
 class SplashActivity : AppCompatActivity() {
 
     private val auth = FirebaseAuth.getInstance()
     private lateinit var permissionManager: PermissionManager
+    private lateinit var deviceStateManager: DeviceStateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,22 +25,40 @@ class SplashActivity : AppCompatActivity() {
         supportActionBar?.hide()
 
         permissionManager = PermissionManager(this)
+        deviceStateManager = DeviceStateManager(this)
 
-        // Check authentication and permissions after splash delay
+        // Check device state and navigate appropriately after splash delay
         Handler(Looper.getMainLooper()).postDelayed({
-            checkAuthenticationAndNavigate()
+            checkDeviceStateAndNavigate()
         }, 3000) // Reduced to 3 seconds for better UX
     }
 
-    private fun checkAuthenticationAndNavigate() {
+    private fun checkDeviceStateAndNavigate() {
+        when {
+            deviceStateManager.isChildDevice() -> {
+                // This device is linked as a child device - go directly to child mode
+                navigateToChildMode()
+            }
+            deviceStateManager.isParentDevice() -> {
+                // This device is set up as parent device - check authentication
+                checkParentAuthenticationAndNavigate()
+            }
+            else -> {
+                // Unlinked device - go to role selection
+                navigateToRoleSelection()
+            }
+        }
+    }
+
+    private fun checkParentAuthenticationAndNavigate() {
         val currentUser = auth.currentUser
         
         if (currentUser != null && currentUser.isEmailVerified) {
-            // User is authenticated and email is verified
+            // Parent is authenticated and email is verified
             checkPermissionsAndNavigateToMain()
         } else {
-            // No authenticated user, go to role selection
-            navigateToRoleSelection()
+            // Parent device but not authenticated - go to parent login
+            navigateToParentLogin()
         }
     }
 
@@ -61,6 +81,19 @@ class SplashActivity : AppCompatActivity() {
 
     private fun navigateToMainDashboard() {
         val intent = Intent(this, ParentDashboardActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+
+    private fun navigateToChildMode() {
+        val intent = Intent(this, ChildModeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun navigateToParentLogin() {
+        val intent = Intent(this, ParentLoginActivity::class.java)
         startActivity(intent)
         finish()
     }

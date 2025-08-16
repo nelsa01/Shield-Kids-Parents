@@ -300,9 +300,9 @@ class ParentDashboardActivity : AppCompatActivity() {
             Toast.makeText(this, "Requests feature coming soon", Toast.LENGTH_SHORT).show()
         }
 
-        // Details Link
+        // Details Link - Open App List
         binding.tvDetails.setOnClickListener {
-            Toast.makeText(this, "App usage details coming soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, AppListActivity::class.java))
         }
 
         // Bottom Navigation

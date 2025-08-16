@@ -138,5 +138,6 @@
         <activity android:name=".SystemTestActivity" />
         <activity android:name=".PermissionRequestActivity" />
         <activity android:name=".AppListActivity" />
+        <activity android:name=".ChildModeActivity" />
     </application>
 </manifest>
