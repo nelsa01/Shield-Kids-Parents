@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etDeviceName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Device name" />
+
+    <AutoCompleteTextView
+        android:id="@+id/etDeviceType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Device type"
+        android:layout_marginTop="12dp"/>
+
+    <Button
+        android:id="@+id/btnSaveDevice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>

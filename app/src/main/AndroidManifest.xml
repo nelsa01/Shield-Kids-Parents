@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<<<<<<< HEAD
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET" />
-=======
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" 
+        android:protectionLevel="signature|privileged" 
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- For Android 13+ notification permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -15,7 +25,6 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-<<<<<<< HEAD
         android:theme="@style/Theme.ShieldKids">
 
         <service
@@ -30,6 +39,77 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
 
+        <!-- Shield Monitoring Service -->
+        <service
+            android:name=".common.base.ShieldMonitoringService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="parental_controls" />
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE_DESCRIPTION"
+                android:value="Monitors device usage and enforces parental controls for child safety" />
+        </service>
+
+        <!-- System Event Receiver -->
+        <receiver
+            android:name=".common.base.SystemEventReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SCREEN_ON" />
+                <action android:name="android.intent.action.SCREEN_OFF" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Boot Receiver -->
+        <receiver
+            android:name=".common.base.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Device Admin Receiver -->
+        <receiver
+            android:name=".common.base.ShieldDeviceAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_policies" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
+                <action android:name="android.app.action.ACTION_PASSWORD_CHANGED" />
+                <action android:name="android.app.action.ACTION_PASSWORD_FAILED" />
+                <action android:name="android.app.action.ACTION_PASSWORD_SUCCEEDED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Shield Accessibility Service for App Blocking -->
+        <service
+            android:name=".features.app_blocking.ShieldAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
         <activity android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.ShieldKids">
@@ -43,27 +123,21 @@
         <activity android:name=".ParentRegisterActivity" />
         <activity android:name=".ParentDashboardActivity" />
         <activity android:name=".ParentLoginActivity" />
+        <activity android:name=".OnboardingActivity" />
+        <activity android:name=".PasswordResetActivity" />
+        <activity android:name=".SettingsActivity" />
         <activity android:name=".AddChildActivity" />
-        <activity android:name=".ChildLoginActivity" />
-        <activity android:name=".ChildDashboardActivity" />
+        <activity android:name=".ChildConnectActivity" />
+        <activity android:name=".ChildrenDashboardActivity" />
+        <activity android:name=".ChildDetailActivity" />
+        <activity android:name=".AddDeviceActivity" />
+        <activity android:name=".WaitingForSetupActivity" />
+        <activity android:name=".DeviceSetupActivity" />
+        <activity android:name=".DeviceSettingsActivity" />
+        <activity android:name=".DeviceAdminSetupActivity" />
+        <activity android:name=".SystemTestActivity" />
+        <activity android:name=".PermissionRequestActivity" />
+        <activity android:name=".AppListActivity" />
+        <activity android:name=".ChildModeActivity" />
     </application>
-=======
-        android:theme="@style/Theme.ShieldKidParents">
-        <activity
-            android:name=".features.authentication.ui.LoginActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.ShieldKidParents">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-
->>>>>>> c6f01aebb4ab9b3469730c25c4e2aa368a66a774
 </manifest>

@@ -11,16 +11,15 @@ class RoleSelectionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_role_selection)
 
-        // Find the Get Started button container and make it clickable
-        val getStartedButton = findViewById<View>(R.id.getStartedButton)
-        getStartedButton?.setOnClickListener {
-            showRoleSelectionDialog()
+        // Set up click listeners for role selection buttons
+        findViewById<View>(R.id.btnParent).setOnClickListener {
+            // Navigate to parent login
+            startActivity(Intent(this, ParentLoginActivity::class.java))
         }
-    }
 
-    private fun showRoleSelectionDialog() {
-        // For now, navigate directly to parent login
-        // You can implement a dialog here later if needed
-        startActivity(Intent(this, ParentLoginActivity::class.java))
+        findViewById<View>(R.id.btnChild).setOnClickListener {
+            // Navigate to child connect device screen
+            startActivity(Intent(this, ChildConnectActivity::class.java))
+        }
     }
 }
