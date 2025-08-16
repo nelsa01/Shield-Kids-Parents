@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/gray_100">
+
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/teal_500"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:title="Installed Apps"
+        app:titleTextColor="@color/white" />
+
+    <!-- Stats Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvStatsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="App Statistics"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvStats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:textSize="14sp"
+            android:textColor="@color/gray_600" />
+
+    </LinearLayout>
+
+    <!-- Search Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="16dp">
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchView"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/card_background"
+            app:iconifiedByDefault="false"
+            app:queryHint="Search apps..."
+            app:searchIcon="@drawable/ic_search" />
+
+    </LinearLayout>
+
+    <!-- Filter Chips -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:paddingBottom="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:checkable="true"
+                android:checked="true"
+                android:text="All"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipUser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="User Apps"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipSystem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="System"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipSocial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Social"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipGames"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Games"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipEducational"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Educational"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipEntertainment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Entertainment"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipProductivity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Productivity"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipCommunication"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Communication"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipOther"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Other"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <!-- Results Count -->
+    <TextView
+        android:id="@+id/tvResultsCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/gray_100"
+        android:text="0 apps found"
+        android:textSize="12sp"
+        android:textColor="@color/gray_600"
+        android:padding="8dp"
+        android:visibility="gone" />
+
+    <!-- App List -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewApps"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="8dp" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <!-- Loading Indicator -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+</LinearLayout>

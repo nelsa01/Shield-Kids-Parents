@@ -7,6 +7,12 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.shieldtechhub.shieldkids.R
+import com.shieldtechhub.shieldkids.features.policy.PolicyEnforcementManager
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class ShieldMonitoringService : Service() {
     
@@ -36,6 +42,10 @@ class ShieldMonitoringService : Service() {
     }
     
     private var isMonitoring = false
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    
+    private lateinit var policyManager: PolicyEnforcementManager
+    private lateinit var screenTimeCollector: ScreenTimeCollector
     
     override fun onCreate() {
         super.onCreate()
@@ -65,11 +75,8 @@ class ShieldMonitoringService : Service() {
         isMonitoring = true
         startForeground(NOTIFICATION_ID, createNotification())
         
-        // TODO: Initialize monitoring components
-        // - App usage tracking
-        // - Location monitoring
-        // - Screen time tracking
-        // - Device admin enforcement
+        // Initialize monitoring components
+        initializeMonitoringComponents()
     }
     
     private fun stopMonitoring() {
@@ -109,6 +116,42 @@ class ShieldMonitoringService : Service() {
             
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+    
+    private fun initializeMonitoringComponents() {
+        try {
+            // Initialize policy manager
+            policyManager = PolicyEnforcementManager.getInstance(this)
+            
+            // Initialize screen time collector
+            screenTimeCollector = ScreenTimeCollector.getInstance(this)
+            
+            // Start periodic data collection
+            serviceScope.launch {
+                startPeriodicDataCollection()
+            }
+            
+            android.util.Log.d("ShieldMonitoring", "Monitoring components initialized successfully")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("ShieldMonitoring", "Failed to initialize monitoring components", e)
+        }
+    }
+    
+    private suspend fun startPeriodicDataCollection() {
+        try {
+            // Collect initial screen time data
+            screenTimeCollector.collectDailyUsageData()
+            
+            // Sync data to backend
+            screenTimeCollector.syncUsageDataToBackend()
+            
+            // Validate policy integrity
+            policyManager.validatePolicyIntegrity()
+            
+        } catch (e: Exception) {
+            android.util.Log.e("ShieldMonitoring", "Error in periodic data collection", e)
         }
     }
 }

@@ -2,9 +2,12 @@ package com.shieldtechhub.shieldkids.common.utils
 
 import android.Manifest
 import android.app.Activity
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
@@ -46,8 +49,20 @@ class PermissionManager(private val context: Context) {
     private val sharedPrefs = context.getSharedPreferences("shield_permissions", Context.MODE_PRIVATE)
     
     fun checkPermissionStatus(permission: String): PermissionStatus {
+        val isGranted = when (permission) {
+            Manifest.permission.PACKAGE_USAGE_STATS -> {
+                hasUsageStatsPermission()
+            }
+            Manifest.permission.SYSTEM_ALERT_WINDOW -> {
+                hasOverlayPermission()
+            }
+            else -> {
+                ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        
         return when {
-            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED -> {
+            isGranted -> {
                 PermissionStatus.GRANTED
             }
             hasBeenRequested(permission) && !shouldShowRequestRationale(permission) -> {
@@ -235,6 +250,32 @@ class PermissionManager(private val context: Context) {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION -> 4
             else -> 5 // Lowest priority
+        }
+    }
+    
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOpsManager.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                context.packageName
+            )
+        } else {
+            appOpsManager.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                context.packageName
+            )
+        }
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+    
+    private fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(context)
+        } else {
+            true // Permission not required on older versions
         }
     }
 }
