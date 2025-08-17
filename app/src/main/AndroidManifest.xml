@@ -128,7 +128,6 @@
         <activity android:name=".SettingsActivity" />
         <activity android:name=".AddChildActivity" />
         <activity android:name=".ChildConnectActivity" />
-        <activity android:name=".ChildrenDashboardActivity" />
         <activity android:name=".ChildDetailActivity" />
         <activity android:name=".AddDeviceActivity" />
         <activity android:name=".WaitingForSetupActivity" />
@@ -139,5 +138,6 @@
         <activity android:name=".PermissionRequestActivity" />
         <activity android:name=".AppListActivity" />
         <activity android:name=".ChildModeActivity" />
+        <activity android:name=".ChildDeviceLinkingActivity" />
     </application>
 </manifest>

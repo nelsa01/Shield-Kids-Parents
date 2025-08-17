@@ -29,6 +29,7 @@
     <!-- Additional grays -->
     <color name="gray_700">#FF616161</color>
     <color name="gray_800">#FF424242</color>
+    <color name="gray_900">#FF212121</color>
     <color name="gray_200">#FFEEEEEE</color>
     
     <!-- Teal colors -->

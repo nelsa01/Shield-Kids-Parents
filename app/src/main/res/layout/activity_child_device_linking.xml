@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="48dp"
+            android:layout_marginBottom="48dp">
+
+            <!-- Shield Icon -->
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_shield"
+                android:tint="@color/teal_500"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Link This Device"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray_900"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Subtitle -->
+            <TextView
+                android:id="@+id/tvSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter the reference number provided by your parent to link this device."
+                android:textSize="16sp"
+                android:textColor="@color/gray_600"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp" />
+
+        </LinearLayout>
+
+        <!-- Reference Number Input Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="32dp">
+
+            <!-- Input Label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reference Number"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray_800"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Reference Number Field Container -->
+            <LinearLayout
+                android:id="@+id/referenceFieldContainer"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:background="@drawable/input_field_background"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <!-- Reference Icon -->
+                <ImageView
+                    android:id="@+id/ivReferenceIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_key"
+                    android:tint="@color/gray_400"
+                    android:layout_marginEnd="12dp" />
+
+                <!-- Reference Number Input -->
+                <EditText
+                    android:id="@+id/etReferenceNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Enter 6-character code"
+                    android:textSize="16sp"
+                    android:textColor="@color/gray_900"
+                    android:textColorHint="@color/gray_400"
+                    android:inputType="textCapCharacters"
+                    android:maxLength="6"
+                    android:letterSpacing="0.1" />
+
+            </LinearLayout>
+
+            <!-- Helper Text -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ask your parent for the 6-character reference number from their Shield Kids app."
+                android:textSize="14sp"
+                android:textColor="@color/gray_500"
+                android:layout_marginTop="8dp"
+                android:lineSpacingExtra="2dp" />
+
+        </LinearLayout>
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Link Button -->
+        <Button
+            android:id="@+id/btnLink"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Link Device"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:background="@drawable/button_primary"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Back to Selection Button -->
+        <Button
+            android:id="@+id/btnBackToSelection"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Back to Role Selection"
+            android:textSize="16sp"
+            android:textColor="@color/teal_500"
+            android:background="@drawable/button_secondary"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Help Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/card_background"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Need Help?"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray_800"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Ask your parent to open their Shield Kids app\n• Go to 'Add Child' and create your profile\n• They will see a 6-character reference number to share with you\n• Enter that number here to link your device"
+                android:textSize="14sp"
+                android:textColor="@color/gray_600"
+                android:lineSpacingExtra="4dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

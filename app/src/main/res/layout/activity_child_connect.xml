@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-        android:gravity="center_horizontal"
+    android:background="@color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
 
         <!-- Device Icon -->
         <ImageView
             android:layout_width="80dp"
             android:layout_height="80dp"
+            android:src="@drawable/ic_shield"
             android:background="@drawable/circle_background"
             android:layout_marginBottom="24dp"
             android:contentDescription="Device Icon" />
@@ -18,32 +28,69 @@
             android:text="Connect Your Device"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="@color/gray_900"
             android:layout_marginBottom="16dp" />
 
+        <!-- Subtitle -->
         <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="Enter the connection code provided by your parent"
             android:textSize="16sp"
             android:textColor="@color/gray_600"
             android:gravity="center"
             android:layout_marginBottom="32dp" />
 
+        <!-- Connection Code Input Container -->
+        <LinearLayout
+            android:id="@+id/codeContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="@drawable/input_field_background"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="24dp">
+
+            <!-- Connection Code Input -->
+            <EditText
+                android:id="@+id/etConnectionCode"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Enter connection code"
+                android:textSize="16sp"
+                android:textColor="@color/gray_900"
+                android:textColorHint="@color/gray_400"
+                android:inputType="textCapCharacters"
+                android:maxLength="8" />
+
+        </LinearLayout>
 
         <!-- Connect Button -->
         <Button
             android:id="@+id/btnConnect"
             android:layout_width="match_parent"
+            android:layout_height="56dp"
             android:text="Connect Device"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/white"
+            android:background="@drawable/button_primary"
             android:layout_marginBottom="24dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="16sp"
+        <!-- Back Button -->
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Back"
+            android:textSize="16sp"
+            android:textColor="@color/teal_500"
+            android:background="@drawable/button_secondary" />
 
-        </LinearLayout>
+    </LinearLayout>
+
+</ScrollView>

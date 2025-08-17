@@ -2,11 +2,14 @@ package com.shieldtechhub.shieldkids
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import com.shieldtechhub.shieldkids.databinding.ActivityChildModeBinding
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
@@ -23,6 +26,12 @@ class ChildModeActivity : AppCompatActivity() {
     private lateinit var policyManager: PolicyEnforcementManager
     private lateinit var screenTimeCollector: ScreenTimeCollector
     private lateinit var appInventoryManager: AppInventoryManager
+    
+    // Device status monitoring
+    private val db = FirebaseFirestore.getInstance()
+    private val statusHandler = Handler(Looper.getMainLooper())
+    private var statusCheckRunnable: Runnable? = null
+    private var isStatusMonitoringActive = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -244,6 +253,9 @@ class ChildModeActivity : AppCompatActivity() {
                 android.util.Log.w("ChildModeActivity", "Failed to start screen time collection", e)
             }
         }
+        
+        // Start device status monitoring
+        startDeviceStatusMonitoring()
     }
 
     override fun onResume() {
@@ -257,7 +269,19 @@ class ChildModeActivity : AppCompatActivity() {
             // Device was unlinked, return to splash
             startActivity(Intent(this, SplashActivity::class.java))
             finish()
+            return
         }
+        
+        // Resume monitoring when app comes to foreground
+        if (!isStatusMonitoringActive) {
+            startDeviceStatusMonitoring()
+        }
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Stop monitoring when app goes to background to save battery
+        stopDeviceStatusMonitoring()
     }
 
     override fun onBackPressed() {
@@ -274,5 +298,139 @@ class ChildModeActivity : AppCompatActivity() {
             .setMessage("This device is protected by your parent. Only your parent can change these settings.")
             .setPositiveButton("OK", null)
             .show()
+    }
+    
+    /**
+     * Start monitoring device status to detect if parent removes this device
+     */
+    private fun startDeviceStatusMonitoring() {
+        isStatusMonitoringActive = true
+        
+        statusCheckRunnable = object : Runnable {
+            override fun run() {
+                if (isStatusMonitoringActive) {
+                    checkDeviceStillExists()
+                    // Check every 30 seconds
+                    statusHandler.postDelayed(this, 30000)
+                }
+            }
+        }
+        
+        // Start immediate check
+        statusCheckRunnable?.let { statusHandler.post(it) }
+        
+        android.util.Log.d("ChildModeActivity", "Device status monitoring started")
+    }
+    
+    /**
+     * Stop device status monitoring
+     */
+    private fun stopDeviceStatusMonitoring() {
+        isStatusMonitoringActive = false
+        statusCheckRunnable?.let { statusHandler.removeCallbacks(it) }
+        android.util.Log.d("ChildModeActivity", "Device status monitoring stopped")
+    }
+    
+    /**
+     * Check if this device still exists in the parent's child document
+     */
+    private fun checkDeviceStillExists() {
+        val childInfo = deviceStateManager.getChildDeviceInfo() ?: return
+        val deviceId = android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+        
+        db.collection("children").document(childInfo.childId)
+            .get()
+            .addOnSuccessListener { childDoc ->
+                if (childDoc.exists()) {
+                    val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
+                    
+                    // Check if our device ID still exists in the devices map
+                    var deviceExists = false
+                    for ((key, value) in devices) {
+                        when (value) {
+                            is String -> {
+                                // Legacy format - device ID is the key
+                                if (key == deviceId) {
+                                    deviceExists = true
+                                    break
+                                }
+                            }
+                            is Map<*, *> -> {
+                                // New format - check deviceId inside the map
+                                val deviceInfo = value as Map<String, Any>
+                                if (deviceInfo["deviceId"] == deviceId) {
+                                    deviceExists = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (!deviceExists) {
+                        // Device has been removed by parent - auto logout
+                        handleDeviceRemoved()
+                    }
+                } else {
+                    // Child document doesn't exist - likely deleted
+                    handleDeviceRemoved()
+                }
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.w("ChildModeActivity", "Failed to check device status", e)
+                // Don't logout on network errors - could be temporary
+            }
+    }
+    
+    /**
+     * Handle when device is removed by parent
+     */
+    private fun handleDeviceRemoved() {
+        android.util.Log.i("ChildModeActivity", "Device was removed by parent - logging out")
+        
+        // Stop monitoring
+        stopDeviceStatusMonitoring()
+        
+        // Show notification to child
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                .setTitle("Device Unlinked")
+                .setMessage("Your parent has removed this device from protection. The app will now restart.")
+                .setCancelable(false)
+                .setPositiveButton("OK") { _, _ ->
+                    performAutoLogout()
+                }
+                .show()
+        }
+    }
+    
+    /**
+     * Perform automatic logout and reset device state
+     */
+    private fun performAutoLogout() {
+        // Reset device state to unlinked
+        deviceStateManager.resetDeviceState()
+        
+        // Clear any stored user data
+        getSharedPreferences("screen_time_data", MODE_PRIVATE).edit().clear().apply()
+        
+        // Stop any running services
+        try {
+            val serviceManager = com.shieldtechhub.shieldkids.common.base.ServiceManager(this)
+            serviceManager.stopMonitoringService()
+        } catch (e: Exception) {
+            android.util.Log.w("ChildModeActivity", "Failed to stop monitoring service", e)
+        }
+        
+        // Navigate back to splash/login
+        val intent = Intent(this, SplashActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Stop monitoring when activity is destroyed
+        stopDeviceStatusMonitoring()
     }
 }

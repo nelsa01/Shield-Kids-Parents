@@ -18,8 +18,8 @@ class RoleSelectionActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btnChild).setOnClickListener {
-            // Navigate to child connect device screen
-            startActivity(Intent(this, ChildConnectActivity::class.java))
+            // Navigate to child device linking screen
+            startActivity(Intent(this, ChildDeviceLinkingActivity::class.java))
         }
     }
 }

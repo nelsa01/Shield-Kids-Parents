@@ -1,11 +1,11 @@
-package com.shieldtechub.shieldkidsparents.features.authentication.ui
+package com.shieldtechhub.shieldkids.features.authentication.ui
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.shieldtechub.shieldkidsparents.R
+import com.shieldtechhub.shieldkids.R
 
 class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

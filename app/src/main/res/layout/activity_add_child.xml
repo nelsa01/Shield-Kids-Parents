@@ -1,44 +1,190 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:orientation="vertical"
+    android:background="@color/white">
 
-    <LinearLayout
-        android:orientation="vertical"
+    <!-- Map Section at Top -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="300dp"
+        android:background="@color/gray_100">
 
+        <!-- Map Background -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/maps"
+            android:scaleType="centerCrop"
+            android:alpha="0.8"
+            android:contentDescription="Map Background" />
+
+        <!-- Location Pin -->
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/ic_location_pin"
+            android:contentDescription="Location Pin" />
+
+        <!-- Profile Picture in Top Left -->
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:src="@drawable/profile"
+            android:background="@drawable/circle_background"
+            android:scaleType="centerCrop"
+            android:contentDescription="Profile Picture" />
+
+    </RelativeLayout>
+
+    <!-- White Content Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="@drawable/card_background"
+        android:layout_marginTop="-24dp"
+        android:paddingTop="32dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp">
+
+        <!-- Title -->
         <TextView
-            android:text="@string/add_a_child"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add a Child"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp"
+            android:textColor="@color/gray_900"
+            android:layout_gravity="center"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Profile Photo Section -->
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <EditText
-            android:id="@+id/etName"
-            android:autofillHints="Name"
-            android:hint="@string/child_s_name"
-            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:inputType="textPersonName" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:layout_marginBottom="32dp">
 
-        <EditText
-            android:id="@+id/etYear"
-            android:autofillHints="YOB"
-            android:hint="@string/year_of_birth"
-            android:inputType="number"
+            <!-- Camera/Upload Circle -->
+            <LinearLayout
+                android:id="@+id/btnChoosePhoto"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="@drawable/circle_teal_background"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="8dp">
+
+                <ImageView
+                    android:id="@+id/ivChildAvatar"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_camera_add"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Add Photo" />
+
+            </LinearLayout>
+
+            <!-- Choose Photo Text -->
+            <TextView
+                android:id="@+id/tvPhotoLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add photo (optional)"
+                android:textSize="14sp"
+                android:textColor="@color/gray_600"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- Name Input Field -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"/>
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="@drawable/input_field_background"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="16dp">
 
+            <EditText
+                android:id="@+id/etName"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Name"
+                android:textSize="16sp"
+                android:textColor="@color/gray_900"
+                android:textColorHint="@color/gray_400"
+                android:inputType="textPersonName"
+                android:autofillHints="name" />
+
+        </LinearLayout>
+
+        <!-- Year of Birth Dropdown -->
+        <LinearLayout
+            android:id="@+id/yearContainer"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="@drawable/input_field_background"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="32dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <EditText
+                android:id="@+id/etYear"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Year of birth"
+                android:textSize="16sp"
+                android:textColor="@color/gray_900"
+                android:textColorHint="@color/gray_400"
+                android:inputType="none"
+                android:focusable="false"
+                android:clickable="false"
+                android:autofillHints="birthdate" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_dropdown"
+                android:contentDescription="Dropdown Arrow"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+        <!-- Save Button -->
         <Button
             android:id="@+id/btnSave"
-            android:text="@string/save"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="56dp"
+            android:text="Save"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:background="@drawable/button_primary"
+            android:layout_marginTop="16dp" />
+
     </LinearLayout>
-</ScrollView>
+
+</LinearLayout>

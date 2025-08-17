@@ -5,8 +5,11 @@ import java.util.*
 
 object SecurityUtils {
     fun generateRefNumber(): String {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         val random = Random()
-        return (1000 + random.nextInt(9000)).toString()
+        return (1..6)
+            .map { chars[random.nextInt(chars.length)] }
+            .joinToString("")
     }
 
     fun hashRefNumber(refNumber: String): String {

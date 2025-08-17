@@ -15,9 +15,10 @@ class WaitingForSetupActivity : AppCompatActivity() {
     
     private var deviceId: String = ""
     private var deviceName: String = ""
-    private var linkingCode: Int = 0
+    private var linkingCode: String = ""
     private var childId: String = ""
     private var isChecking = true
+    private var isFromAddChild: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,10 +28,13 @@ class WaitingForSetupActivity : AppCompatActivity() {
         // Get extras from intent
         deviceId = intent.getStringExtra("deviceId") ?: ""
         deviceName = intent.getStringExtra("deviceName") ?: ""
-        linkingCode = intent.getIntExtra("linkingCode", 0)
         childId = intent.getStringExtra("childId") ?: ""
+        isFromAddChild = intent.getBooleanExtra("isFromAddChild", false)
+        
+        // Handle both String and Int linking codes
+        linkingCode = intent.getStringExtra("linkingCode") ?: intent.getIntExtra("linkingCode", 0).toString()
 
-        if (deviceId.isEmpty() || deviceName.isEmpty() || linkingCode == 0) {
+        if (childId.isEmpty() || linkingCode.isEmpty() || linkingCode == "0") {
             finish()
             return
         }
@@ -40,19 +44,34 @@ class WaitingForSetupActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        binding.tvDeviceName.text = deviceName
-        binding.tvLinkingCode.text = linkingCode.toString()
-        binding.tvInstructions.text = "Device is waiting for setup. Configure device settings to complete connection."
-
-        // Show setup button immediately
-        binding.btnSetupDevice.visibility = android.view.View.VISIBLE
-        binding.btnSetupDevice.setOnClickListener {
-            val intent = Intent(this, DeviceSetupActivity::class.java)
-            intent.putExtra("deviceId", deviceId)
-            intent.putExtra("deviceName", deviceName)
-            intent.putExtra("childId", childId)
-            startActivity(intent)
-            finish()
+        if (isFromAddChild) {
+            // Flow from AddChildActivity - showing reference number for child to use
+            binding.tvDeviceName.text = "Child Profile Created"
+            binding.tvLinkingCode.text = linkingCode
+            binding.tvInstructions.text = "Share this reference number with your child so they can link their device to this profile."
+            binding.tvStatus.text = "Waiting for child to enter this code on their device..."
+            
+            // Hide device-specific buttons for this flow
+            binding.btnSetupDevice.visibility = android.view.View.GONE
+            binding.btnRemoveDevice.visibility = android.view.View.GONE
+            binding.btnBackToChildren.visibility = android.view.View.VISIBLE
+            
+        } else {
+            // Flow from AddDeviceActivity - device document exists
+            binding.tvDeviceName.text = deviceName
+            binding.tvLinkingCode.text = linkingCode
+            binding.tvInstructions.text = "Device is waiting for setup. Configure device settings to complete connection."
+            
+            // Show setup button immediately
+            binding.btnSetupDevice.visibility = android.view.View.VISIBLE
+            binding.btnSetupDevice.setOnClickListener {
+                val intent = Intent(this, DeviceSetupActivity::class.java)
+                intent.putExtra("deviceId", deviceId)
+                intent.putExtra("deviceName", deviceName)
+                intent.putExtra("childId", childId)
+                startActivity(intent)
+                finish()
+            }
         }
 
         // Remove Device Button
@@ -61,7 +80,7 @@ class WaitingForSetupActivity : AppCompatActivity() {
         }
 
         binding.btnBackToChildren.setOnClickListener {
-            val intent = Intent(this, ChildrenDashboardActivity::class.java)
+            val intent = Intent(this, ParentDashboardActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
             startActivity(intent)
             finish()
@@ -83,31 +102,57 @@ class WaitingForSetupActivity : AppCompatActivity() {
     }
 
     private fun checkDeviceStatus() {
-        // Check if device setup is complete (device is connected)
-        db.collection("devices").document(deviceId)
-            .get()
-            .addOnSuccessListener get@{ deviceDoc ->
-                if (deviceDoc.exists()) {
-                    val isConnected = deviceDoc.getBoolean("isConnected") ?: false
-                    if (isConnected) {
-                        isChecking = false // Stop checking
-                        binding.tvStatus.text = "Device Setup Complete! Child's device is now connected."
-                        binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
-                        binding.progressBar.visibility = android.view.View.GONE
-                        binding.btnSetupDevice.visibility = android.view.View.GONE
-                        binding.btnBackToChildren.visibility = android.view.View.VISIBLE
-                        return@get
+        if (isFromAddChild) {
+            // Check if child's devices collection has been updated (someone linked using the reference number)
+            db.collection("children").document(childId)
+                .get()
+                .addOnSuccessListener { childDoc ->
+                    if (childDoc.exists()) {
+                        val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
+                        if (devices.isNotEmpty()) {
+                            isChecking = false // Stop checking
+                            binding.tvStatus.text = "Device linked successfully! Child device is now connected."
+                            binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
+                            binding.progressBar.visibility = android.view.View.GONE
+                            return@addOnSuccessListener
+                        }
                     }
+                    
+                    // Still waiting for child to link
+                    binding.tvStatus.text = "Waiting for child to enter this code on their device..."
+                    binding.progressBar.visibility = android.view.View.VISIBLE
                 }
+                .addOnFailureListener { e ->
+                    binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
+                    binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+                }
+        } else {
+            // Original flow - Check if device setup is complete (device is connected)
+            db.collection("devices").document(deviceId)
+                .get()
+                .addOnSuccessListener get@{ deviceDoc ->
+                    if (deviceDoc.exists()) {
+                        val isConnected = deviceDoc.getBoolean("isConnected") ?: false
+                        if (isConnected) {
+                            isChecking = false // Stop checking
+                            binding.tvStatus.text = "Device Setup Complete! Child's device is now connected."
+                            binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
+                            binding.progressBar.visibility = android.view.View.GONE
+                            binding.btnSetupDevice.visibility = android.view.View.GONE
+                            binding.btnBackToChildren.visibility = android.view.View.VISIBLE
+                            return@get
+                        }
+                    }
 
-                // Still waiting for setup to complete
-                binding.tvStatus.text = "Waiting for device setup to complete..."
-                binding.progressBar.visibility = android.view.View.VISIBLE
-            }
-            .addOnFailureListener { e ->
-                binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
-                binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
-            }
+                    // Still waiting for setup to complete
+                    binding.tvStatus.text = "Waiting for device setup to complete..."
+                    binding.progressBar.visibility = android.view.View.VISIBLE
+                }
+                .addOnFailureListener { e ->
+                    binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
+                    binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+                }
+        }
     }
 
     private fun showRemoveDeviceConfirmation() {
@@ -141,8 +186,8 @@ class WaitingForSetupActivity : AppCompatActivity() {
                                 .delete()
                                 .addOnSuccessListener {
                                     Toast.makeText(this, "Device '$deviceName' removed successfully", Toast.LENGTH_SHORT).show()
-                                    // Navigate back to children dashboard
-                                    val intent = Intent(this, ChildrenDashboardActivity::class.java)
+                                    // Navigate back to parent dashboard
+                                    val intent = Intent(this, ParentDashboardActivity::class.java)
                                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                                     startActivity(intent)
                                     finish()

@@ -17,7 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.common.utils.PermissionManager
 import com.shieldtechhub.shieldkids.databinding.ActivityParentDashboardBinding
 
-class ParentDashboardActivity : AppCompatActivity() {
+class ParentDashboardActivity : AppCompatActivity(), AddChildBottomSheet.AddChildListener {
     private lateinit var binding: ActivityParentDashboardBinding
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
@@ -220,7 +220,7 @@ class ParentDashboardActivity : AppCompatActivity() {
                         topMargin = 20
                     }
                     setOnClickListener {
-                        startActivity(Intent(this@ParentDashboardActivity, ChildrenDashboardActivity::class.java))
+                        showAllChildrenView(children)
                     }
                 }
                 childrenContainer.addView(viewAllButton)
@@ -264,7 +264,12 @@ class ParentDashboardActivity : AppCompatActivity() {
             
             // Add click listener to view child details
             setOnClickListener {
-                startActivity(Intent(this@ParentDashboardActivity, ChildrenDashboardActivity::class.java))
+                val intent = Intent(this@ParentDashboardActivity, ChildDetailActivity::class.java)
+                intent.putExtra("childId", child.id)
+                intent.putExtra("childName", child.name)
+                intent.putExtra("profileImageUri", child.profileImageUri)
+                intent.putExtra("birthYear", child.yearOfBirth)
+                startActivity(intent)
             }
         }
 
@@ -289,10 +294,116 @@ class ParentDashboardActivity : AppCompatActivity() {
         return childContainer
     }
 
+    private fun showAllChildrenView(children: List<Child>) {
+        // Create a dialog or expand the view to show all children
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("All Children (${children.size})")
+            .create()
+        
+        val scrollView = android.widget.ScrollView(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24, 24, 24, 24)
+        }
+        
+        children.forEach { child ->
+            val childItem = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 16
+                }
+                setPadding(16, 16, 16, 16)
+                background = ContextCompat.getDrawable(this@ParentDashboardActivity, R.drawable.card_background)
+                isClickable = true
+                isFocusable = true
+                
+                setOnClickListener {
+                    dialog.dismiss()
+                    val intent = Intent(this@ParentDashboardActivity, ChildDetailActivity::class.java)
+                    intent.putExtra("childId", child.id)
+                    intent.putExtra("childName", child.name)
+                    intent.putExtra("profileImageUri", child.profileImageUri)
+                    intent.putExtra("birthYear", child.yearOfBirth)
+                    startActivity(intent)
+                }
+            }
+            
+            // Avatar
+            val avatar = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(48, 48).apply {
+                    marginEnd = 16
+                }
+                if (child.profileImageUri.isNotEmpty()) {
+                    try {
+                        val uri = Uri.parse(child.profileImageUri)
+                        setImageURI(uri)
+                    } catch (e: Exception) {
+                        setImageResource(R.drawable.kidprofile)
+                    }
+                } else {
+                    setImageResource(R.drawable.kidprofile)
+                }
+                background = ContextCompat.getDrawable(this@ParentDashboardActivity, R.drawable.circle_background)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+            
+            // Child info
+            val infoContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { weight = 1f }
+            }
+            
+            val nameText = TextView(this).apply {
+                text = child.name
+                textSize = 16f
+                setTextColor(ContextCompat.getColor(this@ParentDashboardActivity, R.color.gray_900))
+                setTypeface(null, android.graphics.Typeface.BOLD)
+            }
+            
+            val ageText = TextView(this).apply {
+                if (child.yearOfBirth > 0) {
+                    val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                    val age = currentYear - child.yearOfBirth.toInt()
+                    text = "Age: $age years old"
+                } else {
+                    text = "Age: Not specified"
+                }
+                textSize = 14f
+                setTextColor(ContextCompat.getColor(this@ParentDashboardActivity, R.color.gray_600))
+            }
+            
+            infoContainer.addView(nameText)
+            infoContainer.addView(ageText)
+            
+            // Arrow icon
+            val arrow = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(24, 24)
+                setImageResource(R.drawable.ic_arrow_right)
+                setColorFilter(ContextCompat.getColor(this@ParentDashboardActivity, R.color.gray_400))
+            }
+            
+            childItem.addView(avatar)
+            childItem.addView(infoContainer)
+            childItem.addView(arrow)
+            container.addView(childItem)
+        }
+        
+        scrollView.addView(container)
+        dialog.setView(scrollView)
+        dialog.show()
+    }
+
     private fun setupClickListeners() {
         // Add Child Button
         binding.btnAddChild.setOnClickListener {
-            startActivity(Intent(this, AddChildActivity::class.java))
+            showAddChildBottomSheet()
         }
 
         // Requests Card
@@ -344,6 +455,17 @@ class ParentDashboardActivity : AppCompatActivity() {
                 .setNegativeButton("Later", null)
                 .show()
         }, 3000) // 3 second delay
+    }
+    
+    private fun showAddChildBottomSheet() {
+        val bottomSheet = AddChildBottomSheet()
+        bottomSheet.setAddChildListener(this)
+        bottomSheet.show(supportFragmentManager, "AddChildBottomSheet")
+    }
+    
+    override fun onChildAdded(childId: String, childName: String) {
+        // Refresh the children list when a new child is added
+        loadChildren()
     }
     
     data class Child(

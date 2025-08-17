@@ -74,7 +74,7 @@ class DeviceSetupActivity : AppCompatActivity() {
 
         // Skip Button
         binding.btnSkipSetup.setOnClickListener {
-            val intent = Intent(this, ChildrenDashboardActivity::class.java)
+            val intent = Intent(this, ParentDashboardActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
             startActivity(intent)
             finish()
@@ -166,8 +166,8 @@ class DeviceSetupActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 Toast.makeText(this, "Device setup complete! Child's device is now connected.", Toast.LENGTH_LONG).show()
                 
-                // Navigate back to children dashboard
-                val intent = Intent(this, ChildrenDashboardActivity::class.java)
+                // Navigate back to parent dashboard
+                val intent = Intent(this, ParentDashboardActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                 startActivity(intent)
                 finish()

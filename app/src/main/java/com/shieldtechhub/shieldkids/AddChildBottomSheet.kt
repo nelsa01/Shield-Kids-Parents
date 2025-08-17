@@ -4,26 +4,37 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.shieldtechhub.shieldkids.databinding.ActivityAddChildBinding
-import com.shieldtechhub.shieldkids.SecurityUtils
-import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
+import com.shieldtechhub.shieldkids.databinding.BottomSheetAddChildBinding
 import java.util.Calendar
 
-class AddChildActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityAddChildBinding
+class AddChildBottomSheet : BottomSheetDialogFragment() {
+    private var _binding: BottomSheetAddChildBinding? = null
+    private val binding get() = _binding!!
+    
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
-    private lateinit var deviceStateManager: DeviceStateManager
     private var selectedImageUri: Uri? = null
+    
+    // Interface for communicating with parent activity
+    interface AddChildListener {
+        fun onChildAdded(childId: String, childName: String)
+    }
+    
+    private var listener: AddChildListener? = null
+    
+    fun setAddChildListener(listener: AddChildListener) {
+        this.listener = listener
+    }
     
     // Photo picker launcher for selecting child profile image from gallery
     private val photoPickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -37,16 +48,21 @@ class AddChildActivity : AppCompatActivity() {
             
             // Update the text to indicate photo was selected
             binding.tvPhotoLabel.text = "Photo selected"
-            binding.tvPhotoLabel.setTextColor(ContextCompat.getColor(this, R.color.teal_500))
+            binding.tvPhotoLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.teal_500))
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityAddChildBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = BottomSheetAddChildBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        deviceStateManager = DeviceStateManager(this)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         
         setupCalendarPicker()
         setupPhotoSelection()
@@ -79,7 +95,7 @@ class AddChildActivity : AppCompatActivity() {
         val defaultYear = currentYear - 10
         
         val datePickerDialog = DatePickerDialog(
-            this,
+            requireContext(),
             { _, year, _, _ ->
                 binding.etYear.setText(year.toString())
                 validateYearField()
@@ -231,12 +247,12 @@ class AddChildActivity : AppCompatActivity() {
                             onSuccess(docRef.id)
                         }
                         .addOnFailureListener { e ->
-                            Toast.makeText(this, "Failed to create parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            showError("Failed to create parent: ${e.localizedMessage}")
                         }
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to check parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                showError("Failed to check parent: ${e.localizedMessage}")
             }
     }
 
@@ -247,7 +263,7 @@ class AddChildActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { snap ->
                 if (!snap.isEmpty) {
-                    Toast.makeText(this, "Reference number conflict, please try again", Toast.LENGTH_SHORT).show()
+                    showError("Reference number conflict, please try again")
                     return@addOnSuccessListener
                 }
 
@@ -270,7 +286,7 @@ class AddChildActivity : AppCompatActivity() {
                         updateParentChildren(parentDocId, childDocRef.id, name, parentUid, refNumber)
                     }
                     .addOnFailureListener { e ->
-                        Toast.makeText(this, "Failed to add child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        showError("Failed to add child: ${e.localizedMessage}")
                     }
             }
     }
@@ -288,32 +304,38 @@ class AddChildActivity : AppCompatActivity() {
                     parentDoc.reference.update("children", currentChildren)
                         .addOnSuccessListener {
                             // Success! Child profile created successfully
-                            // Note: We don't mark this (parent's) device as child device
-                            // The actual child device will link itself using the reference number
+                            // Notify the parent activity about the new child
+                            listener?.onChildAdded(childDocId, childName)
                             
-                            // Navigate to WaitingForSetupActivity instead of showing dialog
-                            val intent = Intent(this, WaitingForSetupActivity::class.java)
+                            // Close the bottom sheet
+                            dismiss()
+                            
+                            // Navigate to WaitingForSetupActivity to show the reference code
+                            val intent = Intent(requireContext(), WaitingForSetupActivity::class.java)
                             intent.putExtra("childId", childDocId)
                             intent.putExtra("childName", childName)
                             intent.putExtra("linkingCode", refNumber)
                             intent.putExtra("isFromAddChild", true) // Flag to indicate this is from adding child
                             startActivity(intent)
-                            finish()
                         }
                         .addOnFailureListener { e ->
-                            Toast.makeText(this, "Failed to update parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            showError("Failed to update parent: ${e.localizedMessage}")
                         }
                 } else {
-                    Toast.makeText(this, "Parent document not found", Toast.LENGTH_SHORT).show()
+                    showError("Parent document not found")
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to get parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                showError("Failed to get parent: ${e.localizedMessage}")
             }
     }
     
     private fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
-    
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }

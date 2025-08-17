@@ -1,49 +1,143 @@
 package com.shieldtechhub.shieldkids
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.databinding.ActivityChildDetailBinding
-import android.widget.Button
-import androidx.core.content.ContextCompat
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
+import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Date
 class ChildDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChildDetailBinding
     private val db = FirebaseFirestore.getInstance()
+    private lateinit var screenTimeCollector: ScreenTimeCollector
+    private lateinit var appInventoryManager: AppInventoryManager
 
     private var childId: String = ""
     private var childName: String = ""
+    private var profileImageUri: String = ""
+    private var birthYear: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChildDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Initialize services
+        screenTimeCollector = ScreenTimeCollector.getInstance(this)
+        appInventoryManager = AppInventoryManager(this)
+
+        // Get intent data
         childId = intent.getStringExtra("childId") ?: ""
         childName = intent.getStringExtra("childName") ?: ""
+        profileImageUri = intent.getStringExtra("profileImageUri") ?: ""
+        birthYear = intent.getLongExtra("birthYear", 0)
 
         if (childId.isEmpty()) {
             Toast.makeText(this, "Missing child info", Toast.LENGTH_SHORT).show()
             finish(); return
         }
 
-        binding.tvChildName.text = childName
-
-        binding.btnAddDevice.setOnClickListener {
-            val i = Intent(this, AddDeviceActivity::class.java)
-            i.putExtra("childId", childId)
-            startActivity(i)
-        }
-
-        loadDevices()
+        setupUI()
+        setupClickListeners()
+        loadChildData()
     }
 
     override fun onResume() {
         super.onResume()
+        loadChildData() // This will refresh the devices list when returning from AddDeviceActivity
+    }
+
+    private fun setupUI() {
+        // Set child name
+        binding.tvChildName.text = childName
+        
+        // Set device status to Active by default
+        binding.tvDeviceStatus.text = "Active"
+
+        // Set profile image
+        if (profileImageUri.isNotEmpty()) {
+            try {
+                val uri = Uri.parse(profileImageUri)
+                binding.ivChildAvatar.setImageURI(uri)
+            } catch (e: Exception) {
+                binding.ivChildAvatar.setImageResource(R.drawable.kidprofile)
+            }
+        } else {
+            binding.ivChildAvatar.setImageResource(R.drawable.kidprofile)
+        }
+        
+        // Set default time limit
+        binding.tvTimeLimit.text = "2 hrs 21 min"
+    }
+
+    private fun setupClickListeners() {
+        // Back button
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+
+        // Action buttons
+        binding.btnRequests.setOnClickListener {
+            Toast.makeText(this, "Requests feature coming soon!", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnScreenTime.setOnClickListener {
+            val intent = Intent(this, AppListActivity::class.java)
+            intent.putExtra("childId", childId)
+            intent.putExtra("childName", childName)
+            startActivity(intent)
+        }
+
+        binding.btnHistory.setOnClickListener {
+            Toast.makeText(this, "History feature coming soon!", Toast.LENGTH_SHORT).show()
+        }
+
+        // Add Device button
+        binding.btnAddDevice.setOnClickListener {
+            val intent = Intent(this, AddDeviceActivity::class.java)
+            intent.putExtra("childId", childId)
+            startActivity(intent)
+        }
+
+
+        // Most visited location
+        binding.btnLocation.setOnClickListener {
+            Toast.makeText(this, "Location feature coming soon!", Toast.LENGTH_SHORT).show()
+        }
+
+        // Bottom navigation
+        binding.navHome.setOnClickListener {
+            finish() // Go back to parent dashboard
+        }
+
+        binding.navLocation.setOnClickListener {
+            Toast.makeText(this, "Location feature coming soon!", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.navLightning.setOnClickListener {
+            Toast.makeText(this, "Lightning feature coming soon!", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+    }
+
+    private fun loadChildData() {
         loadDevices()
+        loadScreenTimeData()
     }
 
     private fun loadDevices() {
@@ -52,8 +146,8 @@ class ChildDetailActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { childDoc ->
                 if (childDoc.exists()) {
-                    val devices = childDoc.get("devices") as? HashMap<String, String> ?: HashMap()
-                    displayDevices(devices)
+                    val devicesMap = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
+                    displayDevices(devicesMap)
                 } else {
                     displayDevices(HashMap())
                 }
@@ -64,54 +158,81 @@ class ChildDetailActivity : AppCompatActivity() {
             }
     }
 
-    private fun displayDevices(devices: HashMap<String, String>) {
+    private fun displayDevices(devices: HashMap<String, Any>) {
         val container = binding.devicesContainer
         container.removeAllViews()
         
+        // Update status indicator
+        updateDeviceStatusIndicator(devices)
+        
         if (devices.isEmpty()) {
-            binding.btnAddDevice.visibility = android.view.View.VISIBLE
-            addInfoText(container, "No devices yet. Add one to get started!")
+            // Show placeholder message
+            addEmptyDeviceMessage(container)
         } else {
-            binding.btnAddDevice.visibility = android.view.View.VISIBLE
-            
-            // Add header
-            val headerText = TextView(this)
-            headerText.text = "Connected Devices:"
-            headerText.textSize = 16f
-            headerText.setTypeface(null, android.graphics.Typeface.BOLD)
-            headerText.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 16
-            }
-            container.addView(headerText)
-            
             // Display each device
-            devices.forEach { (deviceId, deviceName) ->
-                addDeviceItem(container, deviceId, deviceName)
+            devices.forEach { (deviceId, deviceData) ->
+                when (deviceData) {
+                    is String -> {
+                        // Legacy format: device name is stored as string
+                        addDeviceIcon(container, deviceId, deviceData, "android")
+                    }
+                    is Map<*, *> -> {
+                        // New format: device info is stored as map
+                        val deviceInfo = deviceData as Map<String, Any>
+                        val deviceName = deviceInfo["deviceName"] as? String ?: "Unknown Device"
+                        val deviceType = deviceInfo["deviceType"] as? String ?: "android"
+                        addDeviceIcon(container, deviceId, deviceName, deviceType)
+                    }
+                    else -> {
+                        // Unknown format, use fallback
+                        addDeviceIcon(container, deviceId, "Unknown Device", "android")
+                    }
+                }
             }
         }
     }
 
-    private fun addDeviceItem(container: LinearLayout, deviceId: String, deviceName: String) {
+    private fun updateDeviceStatusIndicator(devices: HashMap<String, Any>) {
+        val statusIndicator = binding.deviceStatusIndicator
+        if (devices.isEmpty()) {
+            statusIndicator.setBackgroundResource(R.drawable.circle_gray_dot)
+            binding.tvDeviceStatus.text = "Offline"
+            binding.tvDeviceStatus.setTextColor(ContextCompat.getColor(this, R.color.gray_500))
+        } else {
+            statusIndicator.setBackgroundResource(R.drawable.circle_green_dot)
+            binding.tvDeviceStatus.text = "Active"
+            binding.tvDeviceStatus.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+        }
+    }
+
+    private fun addEmptyDeviceMessage(container: LinearLayout) {
+        val messageView = TextView(this).apply {
+            text = "No devices linked yet"
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(this@ChildDetailActivity, R.color.gray_500))
+            gravity = android.view.Gravity.CENTER
+            setPadding(16, 32, 16, 32)
+        }
+        container.addView(messageView)
+    }
+
+    private fun addDeviceIcon(container: LinearLayout, deviceId: String, deviceName: String, deviceType: String) {
         val deviceView = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = 8 }
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            background = resources.getDrawable(R.drawable.rectangle_background, null)
-            setPadding(16, 12, 16, 12)
-            
-            // Make the entire device view clickable
+            ).apply {
+                marginEnd = 24
+            }
+            setPadding(8, 8, 8, 8)
             isClickable = true
             isFocusable = true
-            foreground = resources.getDrawable(android.R.drawable.list_selector_background, null)
+            background = ContextCompat.getDrawable(this@ChildDetailActivity, android.R.drawable.list_selector_background)
             
             setOnClickListener {
-                // Navigate to device settings/edit screen
+                // Navigate to device settings screen
                 val intent = Intent(this@ChildDetailActivity, DeviceSettingsActivity::class.java)
                 intent.putExtra("deviceId", deviceId)
                 intent.putExtra("deviceName", deviceName)
@@ -120,118 +241,73 @@ class ChildDetailActivity : AppCompatActivity() {
             }
         }
 
-        val icon = TextView(this).apply {
-            text = "📱"
-            textSize = 20f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { marginEnd = 12 }
+        // Device icon
+        val deviceIcon = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(64, 64).apply {
+                bottomMargin = 8
+            }
+            background = ContextCompat.getDrawable(this@ChildDetailActivity, R.drawable.circle_device_bg)
+            setPadding(16, 16, 16, 16)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            
+            // Set appropriate icon based on device type
+            when (deviceType.lowercase()) {
+                "windows" -> {
+                    setImageResource(R.drawable.ic_device_windows)
+                }
+                "android" -> {
+                    setImageResource(R.drawable.ic_device_android)
+                }
+                "ios" -> {
+                    setImageResource(R.drawable.ic_device_ios)
+                }
+                else -> {
+                    setImageResource(R.drawable.ic_device_android) // Default to Android
+                }
+            }
+            
+            setColorFilter(ContextCompat.getColor(this@ChildDetailActivity, R.color.white))
         }
 
-        val nameText = TextView(this).apply {
+        // Device name
+        val deviceNameView = TextView(this).apply {
             text = deviceName
-            textSize = 16f
-            setTextColor(ContextCompat.getColor(context, R.color.black))
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { 
-                weight = 1f
-                marginEnd = 12 
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(this@ChildDetailActivity, R.color.gray_600))
+            gravity = android.view.Gravity.CENTER
+            maxLines = 1
+            setSingleLine(true)
+            // Truncate long names
+            if (deviceName.length > 10) {
+                this.text = "${deviceName.take(8)}.."
             }
         }
 
-        val statusText = TextView(this).apply {
-            text = "Connected"
-            textSize = 14f
-            setTextColor(ContextCompat.getColor(context, R.color.teal_500))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { marginEnd = 12 }
-        }
-
-        // Add an edit icon to indicate the device is clickable
-        val editIcon = TextView(this).apply {
-            text = "✏️"
-            textSize = 16f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        deviceView.addView(icon)
-        deviceView.addView(nameText)
-        deviceView.addView(statusText)
-        deviceView.addView(editIcon)
+        deviceView.addView(deviceIcon)
+        deviceView.addView(deviceNameView)
         container.addView(deviceView)
     }
 
-    private fun addInfoText(container: LinearLayout, text: String) {
-        val tv = TextView(this)
-        tv.text = text
-        tv.textSize = 14f
-        tv.setTextColor(resources.getColor(R.color.gray_500, null))
-        tv.gravity = android.view.Gravity.CENTER
-        tv.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            topMargin = 32
-        }
-        container.addView(tv)
-    }
 
-    private fun showRemoveDeviceConfirmation(deviceId: String, deviceName: String) {
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Remove Device")
-            .setMessage("Are you sure you want to remove '$deviceName'? This action cannot be undone.")
-            .setPositiveButton("Remove") { _, _ ->
-                removeDevice(deviceId, deviceName)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun removeDevice(deviceId: String, deviceName: String) {
-        // Show loading
-        Toast.makeText(this, "Removing device...", Toast.LENGTH_SHORT).show()
-
-        // First, remove device from child's devices HashMap
-        db.collection("children").document(childId)
-            .get()
-            .addOnSuccessListener { childDoc ->
-                if (childDoc.exists()) {
-                    val currentDevices = childDoc.get("devices") as? HashMap<String, String> ?: HashMap()
-                    currentDevices.remove(deviceId)
-                    
-                    // Update child document
-                    childDoc.reference.update("devices", currentDevices)
-                        .addOnSuccessListener {
-                            // Now delete the device document
-                            db.collection("devices").document(deviceId)
-                                .delete()
-                                .addOnSuccessListener {
-                                    Toast.makeText(this, "Device '$deviceName' removed successfully", Toast.LENGTH_SHORT).show()
-                                    // Refresh the devices list
-                                    loadDevices()
-                                }
-                                .addOnFailureListener { e ->
-                                    Toast.makeText(this, "Failed to delete device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Failed to update child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                        }
+    private fun loadScreenTimeData() {
+        lifecycleScope.launch {
+            try {
+                val todayUsage = screenTimeCollector.collectDailyUsageData()
+                val totalMinutes = todayUsage.totalScreenTimeMs / (1000 * 60)
+                val hours = totalMinutes / 60
+                val minutes = totalMinutes % 60
+                
+                binding.tvTimeLimit.text = if (hours > 0) {
+                    "${hours} hrs ${minutes} min"
                 } else {
-                    Toast.makeText(this, "Child document not found", Toast.LENGTH_SHORT).show()
+                    "${minutes} min"
                 }
+                
+            } catch (e: Exception) {
+                binding.tvTimeLimit.text = "2 hrs 21 min" // Default fallback
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to get child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-            }
+        }
     }
+
 }
 
