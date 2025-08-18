@@ -4,137 +4,134 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
-
-    <!-- Status Bar Space -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="24dp" />
+    android:background="@color/gray_100">
 
     <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp"
-        android:background="@color/white">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="@color/white"
+        android:elevation="2dp">
 
         <ImageView
             android:id="@+id/btnBack"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Back"
+            android:clickable="true"
+            android:focusable="true"
             android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:padding="4dp"
-            android:contentDescription="Back Button" />
+            app:tint="@color/gray_900" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Settings"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
-            android:gravity="center" />
-
-        <View
-            android:layout_width="24dp"
-            android:layout_height="24dp" />
-
-    </LinearLayout>
-
-    <!-- User Information Section -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="20dp"
-        android:background="@color/white">
-
-        <!-- User Avatar -->
-        <LinearLayout
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:background="@drawable/circle_background"
+            android:textColor="@color/gray_900"
             android:gravity="center"
-            android:layout_marginEnd="16dp">
-
-            <TextView
-                android:id="@+id/tvUserInitials"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="KS"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@color/teal_500" />
-
-        </LinearLayout>
-
-        <!-- User Details -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvUserEmail"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="kevin@shieldtechhub.com"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/tvUserName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Kevin Samuels"
-                android:textSize="14sp"
-                android:textColor="@color/gray_600" />
-
-        </LinearLayout>
+            android:layout_marginEnd="24dp" />
 
     </LinearLayout>
 
-    <!-- Settings Categories -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="@color/gray_100">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
-            <!-- General Section -->
+            <!-- User Information Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@color/white"
+                android:padding="16dp"
+                android:layout_marginBottom="8dp">
+
+                <!-- User Avatar -->
+                <LinearLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/circle_teal_background"
+                    android:gravity="center"
+                    android:layout_marginEnd="12dp">
+
+                    <TextView
+                        android:id="@+id/tvUserInitials"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="U"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                </LinearLayout>
+
+                <!-- User Details -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Loading..."
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/gray_900" />
+
+                    <TextView
+                        android:id="@+id/tvUserEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Loading email..."
+                        android:textSize="14sp"
+                        android:textColor="@color/gray_600"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Account Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="General"
-                android:textSize="16sp"
+                android:text="Account"
+                android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="12dp"
-                android:layout_marginStart="8dp" />
+                android:textColor="@color/gray_600"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/rectangle_background"
-                android:padding="8dp"
-                android:layout_marginBottom="24dp">
+                android:background="@color/white"
+                android:layout_marginBottom="8dp">
 
-                <!-- Apps -->
+                <!-- Edit Profile -->
                 <LinearLayout
-                    android:id="@+id/btnApps"
+                    android:id="@+id/btnEditProfile"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -145,18 +142,18 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_apps"
+                        android:src="@drawable/ic_edit_profile"
                         android:layout_marginEnd="16dp"
-                        android:contentDescription="Apps Icon"
+                        android:contentDescription="Edit Profile Icon"
                         app:tint="@color/teal_500" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Apps"
+                        android:text="Edit Profile"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -167,9 +164,15 @@
 
                 </LinearLayout>
 
-                <!-- Internet -->
+                <!-- Change Password -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/gray_200"
+                    android:layout_marginStart="56dp" />
+
                 <LinearLayout
-                    android:id="@+id/btnInternet"
+                    android:id="@+id/btnChangePassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -180,18 +183,18 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_internet"
+                        android:src="@drawable/ic_lock"
                         android:layout_marginEnd="16dp"
-                        android:contentDescription="Internet Icon"
+                        android:contentDescription="Change Password Icon"
                         app:tint="@color/teal_500" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Internet"
+                        android:text="Change Password"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -202,9 +205,15 @@
 
                 </LinearLayout>
 
-                <!-- Device Usage -->
+                <!-- Notification Settings -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/gray_200"
+                    android:layout_marginStart="56dp" />
+
                 <LinearLayout
-                    android:id="@+id/btnDeviceUsage"
+                    android:id="@+id/btnNotificationSettings"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -215,53 +224,18 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_device_usage"
+                        android:src="@drawable/ic_notifications"
                         android:layout_marginEnd="16dp"
-                        android:contentDescription="Device Usage Icon"
+                        android:contentDescription="Notification Icon"
                         app:tint="@color/teal_500" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Device usage"
+                        android:text="Notification Settings"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        android:contentDescription="Arrow"
-                        app:tint="@color/gray_400" />
-
-                </LinearLayout>
-
-                <!-- Location -->
-                <LinearLayout
-                    android:id="@+id/btnLocation"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_location"
-                        app:tint="@color/teal_500"
-                        android:layout_marginEnd="16dp"
-                        android:contentDescription="Location Icon" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Location"
-                        android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -274,26 +248,26 @@
 
             </LinearLayout>
 
-            <!-- Account Section -->
+            <!-- Settings Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Account"
-                android:textSize="16sp"
+                android:text="Settings"
+                android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="12dp"
-                android:layout_marginStart="8dp" />
+                android:textColor="@color/gray_600"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/rectangle_background"
-                android:padding="8dp"
-                android:layout_marginBottom="24dp">
+                android:background="@color/white"
+                android:layout_marginBottom="8dp">
 
-                <!-- Permissions -->
+                <!-- App Permissions -->
                 <LinearLayout
                     android:id="@+id/btnPermissions"
                     android:layout_width="match_parent"
@@ -315,9 +289,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Permissions"
+                        android:text="App Permissions"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -328,9 +302,15 @@
 
                 </LinearLayout>
 
-                <!-- Notification Settings -->
+                <!-- Security Settings -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/gray_200"
+                    android:layout_marginStart="56dp" />
+
                 <LinearLayout
-                    android:id="@+id/btnNotificationSettings"
+                    android:id="@+id/btnSecurity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -338,13 +318,21 @@
                     android:padding="16dp"
                     android:background="?android:attr/selectableItemBackground">
 
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_security"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Security Icon"
+                        app:tint="@color/teal_500" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Notification settings"
+                        android:text="Security Settings"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -355,77 +343,37 @@
 
                 </LinearLayout>
 
-                <!-- Installation -->
+                <!-- Backup & Sync -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/gray_200"
+                    android:layout_marginStart="56dp" />
+
                 <LinearLayout
-                    android:id="@+id/btnInstallation"
+                    android:id="@+id/btnBackup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp"
                     android:background="?android:attr/selectableItemBackground">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Installation"
-                        android:textSize="16sp"
-                        android:textColor="@color/black" />
 
                     <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        android:contentDescription="Arrow"
-                        app:tint="@color/gray_400" />
-
-                </LinearLayout>
-
-                <!-- PassCode -->
-                <LinearLayout
-                    android:id="@+id/btnPassCode"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:background="?android:attr/selectableItemBackground">
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_backup"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Backup Icon"
+                        app:tint="@color/teal_500" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="PassCode"
+                        android:text="Backup &amp; Sync"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        android:contentDescription="Arrow"
-                        app:tint="@color/gray_400" />
-
-                </LinearLayout>
-
-                <!-- Change Password -->
-                <LinearLayout
-                    android:id="@+id/btnChangePassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Change Password"
-                        android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -443,21 +391,62 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Other"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="12dp"
-                android:layout_marginStart="8dp" />
+                android:textColor="@color/gray_600"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/rectangle_background"
-                android:padding="8dp"
-                android:layout_marginBottom="24dp">
+                android:background="@color/white"
+                android:layout_marginBottom="8dp">
+
+                <!-- Help & Support -->
+                <LinearLayout
+                    android:id="@+id/btnHelp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp"
+                    android:background="?android:attr/selectableItemBackground">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_help"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Help Icon"
+                        app:tint="@color/teal_500" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Help &amp; Support"
+                        android:textSize="16sp"
+                        android:textColor="@color/gray_900" />
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_arrow_forward"
+                        android:contentDescription="Arrow"
+                        app:tint="@color/gray_400" />
+
+                </LinearLayout>
 
                 <!-- About -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/gray_200"
+                    android:layout_marginStart="56dp" />
+
                 <LinearLayout
                     android:id="@+id/btnAbout"
                     android:layout_width="match_parent"
@@ -467,13 +456,21 @@
                     android:padding="16dp"
                     android:background="?android:attr/selectableItemBackground">
 
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_info"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="About Icon"
+                        app:tint="@color/teal_500" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="About"
+                        android:text="About ShieldKids"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -485,6 +482,12 @@
                 </LinearLayout>
 
                 <!-- Privacy & Policy -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/gray_200"
+                    android:layout_marginStart="56dp" />
+
                 <LinearLayout
                     android:id="@+id/btnPrivacyPolicy"
                     android:layout_width="match_parent"
@@ -494,13 +497,21 @@
                     android:padding="16dp"
                     android:background="?android:attr/selectableItemBackground">
 
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_privacy"
+                        android:layout_marginEnd="16dp"
+                        android:contentDescription="Privacy Icon"
+                        app:tint="@color/teal_500" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Privacy &amp; Policy"
                         android:textSize="16sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/gray_900" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -514,18 +525,24 @@
             </LinearLayout>
 
             <!-- Logout Button -->
-            <Button
-                android:id="@+id/btnLogout"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Logout"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:background="@drawable/button_background"
-                android:padding="16dp"
-                android:layout_marginTop="16dp" />
+                android:background="@color/white"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnLogout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Logout"
+                    android:textSize="16sp"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:background="@drawable/button_background"
+                    android:layout_margin="16dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

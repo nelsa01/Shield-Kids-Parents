@@ -3,11 +3,14 @@ package com.shieldtechhub.shieldkids
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.databinding.ActivityDeviceSettingsBinding
 
 class DeviceSettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDeviceSettingsBinding
+    private val db = FirebaseFirestore.getInstance()
     
     private var deviceId: String = ""
     private var deviceName: String = ""
@@ -90,6 +93,11 @@ class DeviceSettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "Privacy & Policy coming soon!", Toast.LENGTH_SHORT).show()
         }
         
+        // Remove Device button
+        binding.btnRemoveDevice.setOnClickListener {
+            showRemoveDeviceConfirmation()
+        }
+        
         // Bottom navigation
         binding.navHome.setOnClickListener {
             // Navigate back to parent dashboard
@@ -110,5 +118,55 @@ class DeviceSettingsActivity : AppCompatActivity() {
             // Already in settings, do nothing or show toast
             Toast.makeText(this, "You are already in settings", Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    private fun showRemoveDeviceConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("Remove Device")
+            .setMessage("Are you sure you want to remove '$deviceName' from this child's account? This action cannot be undone and will disconnect the device immediately.")
+            .setPositiveButton("Remove") { _, _ ->
+                removeDevice()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun removeDevice() {
+        // Show loading
+        Toast.makeText(this, "Removing device...", Toast.LENGTH_SHORT).show()
+
+        // First, remove device from child's devices HashMap
+        db.collection("children").document(childId)
+            .get()
+            .addOnSuccessListener { childDoc ->
+                if (childDoc.exists()) {
+                    val currentDevices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
+                    currentDevices.remove(deviceId)
+                    
+                    // Update child document
+                    childDoc.reference.update("devices", currentDevices)
+                        .addOnSuccessListener {
+                            // Now delete the device document
+                            db.collection("devices").document(deviceId)
+                                .delete()
+                                .addOnSuccessListener {
+                                    Toast.makeText(this, "Device '$deviceName' removed successfully", Toast.LENGTH_SHORT).show()
+                                    // Navigate back to child detail
+                                    finish()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(this, "Failed to delete device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Failed to update child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(this, "Child document not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to get child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
     }
 }

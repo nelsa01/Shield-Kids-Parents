@@ -62,6 +62,9 @@ class ParentDashboardActivity : AppCompatActivity(), AddChildBottomSheet.AddChil
     private fun loadChildren() {
         val parentUid = auth.currentUser?.uid ?: return
         
+        // Show loading placeholder
+        showLoadingPlaceholder()
+        
         // First try to find children in the parents collection
         db.collection("parents")
             .whereEqualTo("name", parentUid)
@@ -243,7 +246,7 @@ class ParentDashboardActivity : AppCompatActivity(), AddChildBottomSheet.AddChil
 
         // Create avatar
         val avatar = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(60, 60)
+            layoutParams = LinearLayout.LayoutParams(120, 120)
             
             // Set image based on whether custom profile image exists
             if (child.profileImageUri.isNotEmpty()) {
@@ -292,6 +295,46 @@ class ParentDashboardActivity : AppCompatActivity(), AddChildBottomSheet.AddChil
         childContainer.addView(nameLabel)
         
         return childContainer
+    }
+    
+    private fun showLoadingPlaceholder() {
+        // Use the same container logic as displayChildrenPreview
+        var childrenContainer = binding.root.findViewById<LinearLayout>(R.id.childrenPreviewContainer)
+        
+        if (childrenContainer == null) {
+            childrenContainer = LinearLayout(this).apply {
+                id = R.id.childrenPreviewContainer
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 16
+                    bottomMargin = 16
+                }
+            }
+            
+            // Insert the container after the Add Child button
+            val addChildButton = binding.btnAddChild
+            val parent = addChildButton.parent as LinearLayout
+            val index = parent.indexOfChild(addChildButton) + 1
+            parent.addView(childrenContainer, index)
+        }
+
+        // Clear existing children and show loading
+        childrenContainer.removeAllViews()
+        
+        val loadingText = TextView(this).apply {
+            text = "Loading children..."
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(this@ParentDashboardActivity, R.color.gray_500))
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        childrenContainer.addView(loadingText)
     }
 
     private fun showAllChildrenView(children: List<Child>) {

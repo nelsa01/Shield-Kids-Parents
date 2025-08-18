@@ -45,24 +45,22 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupSettingsMenuListeners() {
-        // General section
-        findViewById<View>(R.id.btnApps).setOnClickListener {
-            startActivity(Intent(this, AppListActivity::class.java))
+        // Profile Management section
+        findViewById<View>(R.id.btnEditProfile).setOnClickListener {
+            Toast.makeText(this, "Edit profile coming soon!", Toast.LENGTH_SHORT).show()
+            // TODO: Navigate to edit profile activity
         }
 
-        findViewById<View>(R.id.btnInternet).setOnClickListener {
-            Toast.makeText(this, "Internet settings coming soon", Toast.LENGTH_SHORT).show()
+        findViewById<View>(R.id.btnChangePassword).setOnClickListener {
+            startActivity(Intent(this, PasswordResetActivity::class.java))
         }
 
-        findViewById<View>(R.id.btnDeviceUsage).setOnClickListener {
-            Toast.makeText(this, "Device usage settings coming soon", Toast.LENGTH_SHORT).show()
+        findViewById<View>(R.id.btnNotificationSettings).setOnClickListener {
+            Toast.makeText(this, "Notification settings coming soon!", Toast.LENGTH_SHORT).show()
+            // TODO: Navigate to notification settings activity
         }
 
-        findViewById<View>(R.id.btnLocation).setOnClickListener {
-            Toast.makeText(this, "Location settings coming soon", Toast.LENGTH_SHORT).show()
-        }
-
-        // Account section
+        // App Security section
         findViewById<View>(R.id.btnPermissions).setOnClickListener {
             val intent = Intent(this, PermissionRequestActivity::class.java).apply {
                 putExtra("from_settings", true)
@@ -70,23 +68,21 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        findViewById<View>(R.id.btnNotificationSettings).setOnClickListener {
-            Toast.makeText(this, "Notification settings coming soon", Toast.LENGTH_SHORT).show()
+        findViewById<View>(R.id.btnSecurity).setOnClickListener {
+            Toast.makeText(this, "Security settings coming soon!", Toast.LENGTH_SHORT).show()
+            // TODO: Navigate to security settings activity
         }
 
-        findViewById<View>(R.id.btnInstallation).setOnClickListener {
-            Toast.makeText(this, "Installation settings coming soon", Toast.LENGTH_SHORT).show()
+        findViewById<View>(R.id.btnBackup).setOnClickListener {
+            Toast.makeText(this, "Backup & sync coming soon!", Toast.LENGTH_SHORT).show()
+            // TODO: Navigate to backup settings activity
         }
 
-        findViewById<View>(R.id.btnPassCode).setOnClickListener {
-            Toast.makeText(this, "PassCode settings coming soon", Toast.LENGTH_SHORT).show()
+        // Support & Information section
+        findViewById<View>(R.id.btnHelp).setOnClickListener {
+            showHelpDialog()
         }
 
-        findViewById<View>(R.id.btnChangePassword).setOnClickListener {
-            startActivity(Intent(this, PasswordResetActivity::class.java))
-        }
-
-        // Other section
         findViewById<View>(R.id.btnAbout).setOnClickListener {
             showAboutDialog()
         }
@@ -159,6 +155,19 @@ class SettingsActivity : AppCompatActivity() {
         }
         startActivity(intent)
         finish()
+    }
+
+    private fun showHelpDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Help & Support")
+            .setMessage("Need help with ShieldKids?\n\n" +
+                    "• Getting Started Guide: Learn how to set up parental controls\n" +
+                    "• FAQ: Find answers to common questions\n" +
+                    "• Contact Support: Get help from our team\n\n" +
+                    "Email: support@shieldtechhub.com\n" +
+                    "Website: www.shieldtechhub.com/help")
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun showAboutDialog() {

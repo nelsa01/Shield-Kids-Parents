@@ -39,6 +39,20 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
+        <!-- Delete Child Button -->
+        <ImageView
+            android:id="@+id/btnDeleteChild"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_delete"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Delete Child"
+            app:tint="@color/white"
+            android:layout_marginEnd="8dp" />
+
         <!-- Profile circle in top right -->
         <ImageView
             android:layout_width="32dp"
@@ -158,7 +172,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Today's time limit"
+                    android:text="Today's time usage"
                     android:textSize="16sp"
                     android:textColor="@color/white"
                     android:alpha="0.8" />
