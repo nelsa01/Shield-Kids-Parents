@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.shieldtechhub.shieldkids.common.utils.PasscodeManager
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -68,10 +69,7 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        findViewById<View>(R.id.btnSecurity).setOnClickListener {
-            Toast.makeText(this, "Security settings coming soon!", Toast.LENGTH_SHORT).show()
-            // TODO: Navigate to security settings activity
-        }
+        findViewById<View>(R.id.btnSecurity).setOnClickListener { showPasscodeDialog() }
 
         findViewById<View>(R.id.btnBackup).setOnClickListener {
             Toast.makeText(this, "Backup & sync coming soon!", Toast.LENGTH_SHORT).show()
@@ -197,6 +195,104 @@ class SettingsActivity : AppCompatActivity() {
                     "We are committed to protecting the privacy of children and comply with COPPA.\n\n" +
                     "For more information, please contact us at privacy@shieldtechhub.com")
             .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showPasscodeDialog() {
+        val isSet = PasscodeManager.isPasscodeSet(this)
+        if (!isSet) {
+            // Set new passcode
+            val input = android.widget.EditText(this).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                hint = "Enter 4-digit passcode"
+                filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+            }
+            val input2 = android.widget.EditText(this).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                hint = "Confirm passcode"
+                filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+            }
+            val container = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(32, 16, 32, 0)
+                addView(input)
+                addView(input2)
+            }
+            AlertDialog.Builder(this)
+                .setTitle("Set App Passcode")
+                .setView(container)
+                .setPositiveButton("Save") { _, _ ->
+                    val c1 = input.text.toString()
+                    val c2 = input2.text.toString()
+                    if (c1.length == 4 && c1 == c2) {
+                        PasscodeManager.setPasscode(this, c1)
+                        Toast.makeText(this, "Passcode set", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Passcodes do not match", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
+            // Change or remove
+            val options = arrayOf("Change Passcode", "Remove Passcode")
+            AlertDialog.Builder(this)
+                .setTitle("App Passcode")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> showChangePasscodeDialog()
+                        1 -> {
+                            PasscodeManager.clearPasscode(this)
+                            Toast.makeText(this, "Passcode removed", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                .show()
+        }
+    }
+
+    private fun showChangePasscodeDialog() {
+        val current = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "Current passcode"
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+        }
+        val new1 = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "New passcode"
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+        }
+        val new2 = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "Confirm new passcode"
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+        }
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(32, 16, 32, 0)
+            addView(current)
+            addView(new1)
+            addView(new2)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Change Passcode")
+            .setView(container)
+            .setPositiveButton("Save") { _, _ ->
+                val c = current.text.toString()
+                val n1 = new1.text.toString()
+                val n2 = new2.text.toString()
+                if (!PasscodeManager.verifyPasscode(this, c)) {
+                    Toast.makeText(this, "Current passcode incorrect", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                if (n1.length == 4 && n1 == n2) {
+                    PasscodeManager.setPasscode(this, n1)
+                    Toast.makeText(this, "Passcode changed", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "New passcodes do not match", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 }

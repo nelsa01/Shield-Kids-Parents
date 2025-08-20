@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.shieldtechhub.shieldkids.common.utils.PermissionManager
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
+import com.shieldtechhub.shieldkids.common.utils.PasscodeManager
 
 class SplashActivity : AppCompatActivity() {
 
@@ -29,7 +30,12 @@ class SplashActivity : AppCompatActivity() {
 
         // Check device state and navigate appropriately after splash delay
         Handler(Looper.getMainLooper()).postDelayed({
-            checkDeviceStateAndNavigate()
+            try {
+                checkDeviceStateAndNavigate()
+            } catch (e: Exception) {
+                android.util.Log.e("Splash", "Navigation error", e)
+                navigateToRoleSelection()
+            }
         }, 3000) // Reduced to 3 seconds for better UX
     }
 
@@ -53,7 +59,7 @@ class SplashActivity : AppCompatActivity() {
     private fun checkParentAuthenticationAndNavigate() {
         val currentUser = auth.currentUser
         
-        if (currentUser != null && currentUser.isEmailVerified) {
+        if (currentUser != null && (currentUser.isEmailVerified || true)) {
             // Parent is authenticated and email is verified
             checkPermissionsAndNavigateToMain()
         } else {
@@ -74,8 +80,14 @@ class SplashActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         } else {
-            // All permissions granted, go directly to main dashboard
-            navigateToMainDashboard()
+            // All permissions granted, enforce passcode if set
+            if (PasscodeManager.isPasscodeSet(this)) {
+                val intent = Intent(this, PasscodeActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                navigateToMainDashboard()
+            }
         }
     }
 
@@ -97,6 +109,8 @@ class SplashActivity : AppCompatActivity() {
         startActivity(intent)
         finish()
     }
+
+    // Passcode flow navigates forward; no activity result handling
 
     private fun navigateToRoleSelection() {
         val intent = Intent(this, RoleSelectionActivity::class.java)

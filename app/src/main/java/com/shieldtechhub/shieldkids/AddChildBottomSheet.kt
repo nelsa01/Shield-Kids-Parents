@@ -8,12 +8,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageMetadata
+import com.google.firebase.FirebaseApp
 import com.shieldtechhub.shieldkids.databinding.BottomSheetAddChildBinding
 import java.util.Calendar
 
@@ -24,6 +28,16 @@ class AddChildBottomSheet : BottomSheetDialogFragment() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
     private var selectedImageUri: Uri? = null
+    private val storage: FirebaseStorage by lazy {
+        val app = FirebaseApp.getInstance()
+        val projectId = app.options.projectId
+        return@lazy if (!projectId.isNullOrEmpty()) {
+            // Force canonical bucket name regardless of google-services.json storage_bucket domain
+            FirebaseStorage.getInstance("gs://$projectId.appspot.com")
+        } else {
+            FirebaseStorage.getInstance()
+        }
+    }
     
     // Interface for communicating with parent activity
     interface AddChildListener {
@@ -40,6 +54,7 @@ class AddChildBottomSheet : BottomSheetDialogFragment() {
     private val photoPickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             selectedImageUri = it
+            Log.d("AddChild", "Selected image URI: $it")
             // Update the avatar image view to show selected photo
             binding.ivChildAvatar.setImageURI(it)
             binding.ivChildAvatar.scaleType = ImageView.ScaleType.CENTER_CROP
@@ -115,29 +130,6 @@ class AddChildBottomSheet : BottomSheetDialogFragment() {
         }.timeInMillis
         
         datePickerDialog.show()
-    }
-    
-    private fun validateNameField(): Boolean {
-        val name = binding.etName.text.toString().trim()
-        
-        return when {
-            name.isEmpty() -> {
-                binding.etName.error = "Please enter the child's name"
-                false
-            }
-            name.length < 2 -> {
-                binding.etName.error = "Name must be at least 2 characters long"
-                false
-            }
-            name.length > 50 -> {
-                binding.etName.error = "Name must be less than 50 characters"
-                false
-            }
-            else -> {
-                binding.etName.error = null
-                true
-            }
-        }
     }
     
     private fun validateYearField(): Boolean {
@@ -267,27 +259,88 @@ class AddChildBottomSheet : BottomSheetDialogFragment() {
                     return@addOnSuccessListener
                 }
 
-                // Create child document
-                val child = hashMapOf(
-                    "name" to name,
-                    "birthYear" to year,
-                    "parent" to hashMapOf(
-                        "docID" to parentUid,
-                        "name" to (auth.currentUser?.email ?: "")
-                    ),
-                    "devices" to hashMapOf<String, String>(),
-                    "refNumberHash" to refNumberHash,
-                    "profileImageUri" to (selectedImageUri?.toString() ?: "") // Optional profile image
-                )
+                // Proceed to upload image if selected, then create doc with download URL
+                val proceedCreate: (String) -> Unit = { imageUrl ->
+                    Log.d("AddChild", "Proceeding to create child with imageUrl=$imageUrl")
+                    val child = hashMapOf(
+                        "name" to name,
+                        "birthYear" to year,
+                        "parent" to hashMapOf(
+                            "docID" to parentUid,
+                            "name" to (auth.currentUser?.email ?: "")
+                        ),
+                        "devices" to hashMapOf<String, String>(),
+                        "refNumberHash" to refNumberHash,
+                        "profileImageUri" to imageUrl
+                    )
 
-                db.collection("children").add(child)
-                    .addOnSuccessListener { childDocRef ->
-                        // Update parent's children HashMap
-                        updateParentChildren(parentDocId, childDocRef.id, name, parentUid, refNumber)
-                    }
-                    .addOnFailureListener { e ->
-                        showError("Failed to add child: ${e.localizedMessage}")
-                    }
+                    db.collection("children").add(child)
+                        .addOnSuccessListener { childDocRef ->
+                            Log.d("AddChild", "Child created: ${childDocRef.id}")
+                            // Update parent's children HashMap
+                            updateParentChildren(parentDocId, childDocRef.id, name, parentUid, refNumber)
+                        }
+                        .addOnFailureListener { e ->
+                            showError("Failed to add child: ${e.localizedMessage}")
+                            Log.e("AddChild", "Failed to add child doc", e)
+                        }
+                }
+
+                val localUri = selectedImageUri
+                if (localUri == null) {
+                    proceedCreate("")
+                } else {
+                    // Upload to Firebase Storage under children/{parentUid}/{timestamp}.jpg
+                    val fileName = "${System.currentTimeMillis()}_${name.replace(" ", "_")}.jpg"
+                    val ref = storage.reference.child("children/$parentUid/$fileName")
+                    Log.d("AddChild", "Uploading to Storage: ${ref.path}")
+
+                    val mimeType = try { requireContext().contentResolver.getType(localUri) } catch (_: Exception) { null } ?: "image/jpeg"
+                    val metadata = StorageMetadata.Builder().setContentType(mimeType).build()
+
+                    ref.putFile(localUri, metadata)
+                        .continueWithTask { task ->
+                            if (!task.isSuccessful) {
+                                throw task.exception ?: Exception("Upload failed")
+                            }
+                            ref.downloadUrl
+                        }
+                        .addOnSuccessListener { uri ->
+                            Log.d("AddChild", "Upload success. Download URL: $uri")
+                            proceedCreate(uri.toString())
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("AddChild", "Upload failed with putFile, retrying with putBytes", e)
+                            // Fallback: read bytes via ContentResolver and upload
+                            try {
+                                val resolver = requireContext().contentResolver
+                                val bytes = resolver.openInputStream(localUri)?.use { it.readBytes() }
+                                if (bytes != null && bytes.isNotEmpty()) {
+                                    ref.putBytes(bytes, metadata)
+                                        .continueWithTask { t ->
+                                            if (!t.isSuccessful) {
+                                                throw t.exception ?: Exception("Upload (bytes) failed")
+                                            }
+                                            ref.downloadUrl
+                                        }
+                                        .addOnSuccessListener { uri ->
+                                            Log.d("AddChild", "Upload (bytes) success. Download URL: $uri")
+                                            proceedCreate(uri.toString())
+                                        }
+                                        .addOnFailureListener { e2 ->
+                                            Log.e("AddChild", "Upload (bytes) failed, proceeding without image", e2)
+                                            proceedCreate("")
+                                        }
+                                } else {
+                                    Log.e("AddChild", "Could not read image bytes; proceeding without image")
+                                    proceedCreate("")
+                                }
+                            } catch (ex: Exception) {
+                                Log.e("AddChild", "Exception reading image for upload", ex)
+                                proceedCreate("")
+                            }
+                        }
+                }
             }
     }
 

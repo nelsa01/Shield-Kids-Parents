@@ -24,7 +24,7 @@ class AddChildActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var deviceStateManager: DeviceStateManager
     private var selectedImageUri: Uri? = null
-    
+
     // Photo picker launcher for selecting child profile image from gallery
     private val photoPickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -34,7 +34,7 @@ class AddChildActivity : AppCompatActivity() {
             binding.ivChildAvatar.scaleType = ImageView.ScaleType.CENTER_CROP
             // Remove tint since we're now showing an actual photo
             binding.ivChildAvatar.clearColorFilter()
-            
+
             // Update the text to indicate photo was selected
             binding.tvPhotoLabel.text = "Photo selected"
             binding.tvPhotoLabel.setTextColor(ContextCompat.getColor(this, R.color.teal_500))
@@ -47,7 +47,7 @@ class AddChildActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         deviceStateManager = DeviceStateManager(this)
-        
+
         setupCalendarPicker()
         setupPhotoSelection()
         binding.btnSave.setOnClickListener { saveChild() }
@@ -57,12 +57,12 @@ class AddChildActivity : AppCompatActivity() {
         // Make the year field non-editable and show calendar on click
         binding.etYear.isFocusable = false
         binding.etYear.isClickable = true
-        
+
         // Set up click listeners for both the field and the container
         binding.etYear.setOnClickListener { showYearPicker() }
         binding.yearContainer.setOnClickListener { showYearPicker() }
     }
-    
+
     private fun setupPhotoSelection() {
         // Set up photo selection click listener
         binding.btnChoosePhoto.setOnClickListener {
@@ -70,14 +70,14 @@ class AddChildActivity : AppCompatActivity() {
             photoPickerLauncher.launch("image/*")
         }
     }
-    
+
     private fun showYearPicker() {
         val calendar = Calendar.getInstance()
         val currentYear = calendar.get(Calendar.YEAR)
-        
+
         // Set default year to 10 years ago (typical for a child)
         val defaultYear = currentYear - 10
-        
+
         val datePickerDialog = DatePickerDialog(
             this,
             { _, year, _, _ ->
@@ -88,45 +88,22 @@ class AddChildActivity : AppCompatActivity() {
             0, // Month (0 = January)
             1  // Day
         )
-        
+
         // Set year range (1-18 years old)
         datePickerDialog.datePicker.minDate = Calendar.getInstance().apply {
             set(currentYear - 18, 0, 1)
         }.timeInMillis
-        
+
         datePickerDialog.datePicker.maxDate = Calendar.getInstance().apply {
             set(currentYear - 1, 11, 31)
         }.timeInMillis
-        
+
         datePickerDialog.show()
     }
-    
-    private fun validateNameField(): Boolean {
-        val name = binding.etName.text.toString().trim()
-        
-        return when {
-            name.isEmpty() -> {
-                binding.etName.error = "Please enter the child's name"
-                false
-            }
-            name.length < 2 -> {
-                binding.etName.error = "Name must be at least 2 characters long"
-                false
-            }
-            name.length > 50 -> {
-                binding.etName.error = "Name must be less than 50 characters"
-                false
-            }
-            else -> {
-                binding.etName.error = null
-                true
-            }
-        }
-    }
-    
+
     private fun validateYearField(): Boolean {
         val yearText = binding.etYear.text.toString().trim()
-        
+
         return when {
             yearText.isEmpty() -> {
                 binding.etYear.error = "Please select the year of birth"
@@ -139,7 +116,7 @@ class AddChildActivity : AppCompatActivity() {
             else -> {
                 val year = yearText.toInt()
                 val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                
+
                 // Check if year is within valid range (1-18 years old)
                 if (year < currentYear - 18 || year > currentYear - 1) {
                     binding.etYear.error = "Child must be between 1 and 18 years old"
@@ -155,42 +132,42 @@ class AddChildActivity : AppCompatActivity() {
     private fun saveChild() {
         val name = binding.etName.text.toString().trim()
         val yearText = binding.etYear.text.toString().trim()
-        
+
         // Validate name
         if (name.isEmpty()) {
             showError("Please enter the child's name")
             binding.etName.requestFocus()
             return
         }
-        
+
         if (name.length < 2) {
             showError("Name must be at least 2 characters long")
             binding.etName.requestFocus()
             return
         }
-        
+
         if (name.length > 50) {
             showError("Name must be less than 50 characters")
             binding.etName.requestFocus()
             return
         }
-        
+
         // Validate year of birth
         if (yearText.isEmpty()) {
             showError("Please select the year of birth")
             showYearPicker()
             return
         }
-        
+
         val year = yearText.toIntOrNull()
         if (year == null) {
             showError("Please select a valid year")
             showYearPicker()
             return
         }
-        
+
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        
+
         // Check if year is within valid range (1-18 years old)
         if (year < currentYear - 18 || year > currentYear - 1) {
             showError("Child must be between 1 and 18 years old")
@@ -199,7 +176,7 @@ class AddChildActivity : AppCompatActivity() {
         }
 
         val parentUid = auth.currentUser?.uid ?: return
-        
+
         // Generate and store hashed reference number
         val refNumber = SecurityUtils.generateRefNumber()
         val refNumberHash = SecurityUtils.hashRefNumber(refNumber)
@@ -283,14 +260,14 @@ class AddChildActivity : AppCompatActivity() {
                 if (parentDoc.exists()) {
                     val currentChildren = parentDoc.get("children") as? HashMap<String, String> ?: HashMap()
                     currentChildren[childDocId] = childName
-                    
+
                     // Update the parent document
                     parentDoc.reference.update("children", currentChildren)
                         .addOnSuccessListener {
                             // Success! Child profile created successfully
                             // Note: We don't mark this (parent's) device as child device
                             // The actual child device will link itself using the reference number
-                            
+
                             // Navigate to WaitingForSetupActivity instead of showing dialog
                             val intent = Intent(this, WaitingForSetupActivity::class.java)
                             intent.putExtra("childId", childDocId)
@@ -311,9 +288,9 @@ class AddChildActivity : AppCompatActivity() {
                 Toast.makeText(this, "Failed to get parent: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
     }
-    
+
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
-    
+
 }

@@ -81,10 +81,6 @@ class DeviceSettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "Installation settings coming soon!", Toast.LENGTH_SHORT).show()
         }
         
-        binding.btnPassCode.setOnClickListener {
-            Toast.makeText(this, "PassCode settings coming soon!", Toast.LENGTH_SHORT).show()
-        }
-        
         binding.btnAbout.setOnClickListener {
             Toast.makeText(this, "About device coming soon!", Toast.LENGTH_SHORT).show()
         }

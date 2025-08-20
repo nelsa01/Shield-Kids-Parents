@@ -418,36 +418,6 @@
                     android:background="@color/gray_200"
                     android:layout_marginStart="32dp" />
 
-                <!-- PassCode -->
-                <LinearLayout
-                    android:id="@+id/btnPassCode"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="PassCode"
-                        android:textSize="16sp"
-                        android:textColor="@color/gray_900"
-                        android:layout_marginStart="16dp" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/gray_400" />
-
-                </LinearLayout>
-
                 <!-- Divider -->
                 <View
                     android:layout_width="match_parent"

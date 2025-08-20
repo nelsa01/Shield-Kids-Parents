@@ -13,6 +13,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.shieldtechhub.shieldkids.common.utils.FirestoreSyncManager
+import com.shieldtechhub.shieldkids.common.utils.ImageLoader
 import com.shieldtechhub.shieldkids.databinding.ActivityChildDetailBinding
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
@@ -24,6 +27,7 @@ class ChildDetailActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var screenTimeCollector: ScreenTimeCollector
     private lateinit var appInventoryManager: AppInventoryManager
+    private var devicesListener: ListenerRegistration? = null
 
     private var childId: String = ""
     private var childName: String = ""
@@ -57,7 +61,7 @@ class ChildDetailActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        loadChildData() // This will refresh the devices list when returning from AddDeviceActivity
+        // no-op; devices listener will keep devices in sync
     }
 
     private fun setupUI() {
@@ -68,16 +72,7 @@ class ChildDetailActivity : AppCompatActivity() {
         binding.tvDeviceStatus.text = "Active"
 
         // Set profile image
-        if (profileImageUri.isNotEmpty()) {
-            try {
-                val uri = Uri.parse(profileImageUri)
-                binding.ivChildAvatar.setImageURI(uri)
-            } catch (e: Exception) {
-                binding.ivChildAvatar.setImageResource(R.drawable.kidprofile)
-            }
-        } else {
-            binding.ivChildAvatar.setImageResource(R.drawable.kidprofile)
-        }
+        ImageLoader.loadInto(this, binding.ivChildAvatar, profileImageUri, R.drawable.kidprofile)
         
         // Set default time limit
         binding.tvTimeLimit.text = "2 hrs 21 min"
@@ -147,21 +142,10 @@ class ChildDetailActivity : AppCompatActivity() {
     }
 
     private fun loadDevices() {
-        // Get the child document to access the devices hashmap
-        db.collection("children").document(childId)
-            .get()
-            .addOnSuccessListener { childDoc ->
-                if (childDoc.exists()) {
-                    val devicesMap = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
-                    displayDevices(devicesMap)
-                } else {
-                    displayDevices(HashMap())
-                }
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Error loading devices: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                displayDevices(HashMap())
-            }
+        devicesListener?.remove()
+        devicesListener = FirestoreSyncManager.listenChildDevices(childId) { devices, _ ->
+            displayDevices(devices)
+        }
     }
 
     private fun displayDevices(devices: HashMap<String, Any>) {
@@ -426,6 +410,12 @@ class ChildDetailActivity : AppCompatActivity() {
             Toast.makeText(this, "Child deleted successfully", Toast.LENGTH_SHORT).show()
             finish()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        devicesListener?.remove()
+        devicesListener = null
     }
 
 }

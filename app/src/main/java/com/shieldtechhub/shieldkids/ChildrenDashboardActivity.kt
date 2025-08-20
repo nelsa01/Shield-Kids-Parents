@@ -12,12 +12,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.shieldtechhub.shieldkids.common.utils.FirestoreSyncManager
+import com.shieldtechhub.shieldkids.common.utils.ImageLoader
 import com.shieldtechhub.shieldkids.databinding.ActivityChildrenDashboardBinding
 
 class ChildrenDashboardActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChildrenDashboardBinding
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+    private var childrenListener: ListenerRegistration? = null
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,89 +37,34 @@ class ChildrenDashboardActivity : AppCompatActivity() {
         }
 
         setupClickListeners()
-        loadChildren()
+        startChildrenListener()
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh children list when returning from AddChildActivity
-        loadChildren()
+        // no-op; real-time listener keeps UI in sync
     }
 
-    private fun loadChildren() {
+    private fun startChildrenListener() {
         val parentUid = auth.currentUser?.uid ?: return
-        
-        // First try to find children in the parents collection
-        db.collection("parents")
-            .whereEqualTo("name", parentUid)
-            .get()
-            .addOnSuccessListener { parentSnap ->
-                if (!parentSnap.isEmpty) {
-                    val parentDoc = parentSnap.documents[0]
-                    val childrenMap = parentDoc.get("children") as? HashMap<String, String> ?: HashMap()
-                    
-                    if (childrenMap.isNotEmpty()) {
-                        // Load child details from children collection
-                        val childrenList = mutableListOf<Child>()
-                        var loadedCount = 0
-                        
-                        childrenMap.forEach { (childId, childName) ->
-                            db.collection("children").document(childId)
-                                .get()
-                                .addOnSuccessListener { childDoc ->
-                                    if (childDoc.exists()) {
-                                        val birthYear = childDoc.getLong("birthYear") ?: 0
-                                        val profileImageUri = childDoc.getString("profileImageUri") ?: ""
-                                        
-                                        childrenList.add(Child(
-                                            id = childId,
-                                            name = childName,
-                                            yearOfBirth = birthYear,
-                                            profileImageUri = profileImageUri
-                                        ))
-                                    } else {
-                                        // Fallback to just the name if child doc doesn't exist
-                                        childrenList.add(Child(
-                                            id = childId,
-                                            name = childName,
-                                            yearOfBirth = 0,
-                                            profileImageUri = ""
-                                        ))
-                                    }
-                                    
-                                    loadedCount++
-                                    if (loadedCount == childrenMap.size) {
-                                        displayChildren(childrenList)
-                                    }
-                                }
-                                .addOnFailureListener { e ->
-                                    // Fallback to just the name if loading fails
-                                    childrenList.add(Child(
-                                        id = childId,
-                                        name = childName,
-                                        yearOfBirth = 0,
-                                        profileImageUri = ""
-                                    ))
-                                    
-                                    loadedCount++
-                                    if (loadedCount == childrenMap.size) {
-                                        displayChildren(childrenList)
-                                    }
-                                }
-                        }
-                    } else {
-                        // No children in the HashMap
-                        displayChildren(emptyList())
-                    }
-                } else {
-                    // No parent document found - this means no children have been added yet
-                    displayChildren(emptyList())
-                }
+        childrenListener?.remove()
+        childrenListener = FirestoreSyncManager.listenParentChildren(parentUid) { children, _ ->
+            val mapped = children.map {
+                Child(
+                    id = it.id,
+                    name = it.name,
+                    yearOfBirth = it.yearOfBirth,
+                    profileImageUri = it.profileImageUri
+                )
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Error loading children: ${e.message}", Toast.LENGTH_SHORT).show()
-                displayChildren(emptyList())
-            }
+            displayChildren(mapped)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        childrenListener?.remove()
+        childrenListener = null
     }
 
     private fun displayChildren(children: List<Child>) {
@@ -143,17 +92,7 @@ class ChildrenDashboardActivity : AppCompatActivity() {
             }
             
             // Set image based on whether custom profile image exists
-            if (child.profileImageUri.isNotEmpty()) {
-                try {
-                    val uri = Uri.parse(child.profileImageUri)
-                    setImageURI(uri)
-                } catch (e: Exception) {
-                    // Fallback to default image if URI is invalid
-                    setImageResource(R.drawable.kidprofile)
-                }
-            } else {
-                setImageResource(R.drawable.kidprofile) // Use kidprofile.png as default profile
-            }
+            ImageLoader.loadInto(this@ChildrenDashboardActivity, this, child.profileImageUri, R.drawable.kidprofile)
             
             background = ContextCompat.getDrawable(this@ChildrenDashboardActivity, R.drawable.circle_background)
             scaleType = ImageView.ScaleType.CENTER_CROP
