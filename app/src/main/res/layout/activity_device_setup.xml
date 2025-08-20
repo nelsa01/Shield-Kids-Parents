@@ -248,7 +248,7 @@
                 android:text="Skip for Now"
                 android:textSize="14sp"
                 android:background="@drawable/button_outline_teal"
-                android:textColor="@color/teal_500" />
+                android:textColor="@color/white" />
 
         </LinearLayout>
 

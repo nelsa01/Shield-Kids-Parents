@@ -157,6 +157,7 @@ class AddDeviceActivity : AppCompatActivity() {
     private fun createDevice() {
         // Generate a 6-character linking code
         val linkingCode = SecurityUtils.generateRefNumber()
+        val linkingCodeHash = SecurityUtils.hashRefNumber(linkingCode)
         
         // Generate device name based on type
         val deviceName = "$selectedDeviceType Device"
@@ -194,7 +195,7 @@ class AddDeviceActivity : AppCompatActivity() {
         // Save device to Firestore
         db.collection("devices").add(device)
             .addOnSuccessListener { documentReference ->
-                // Update the child's devices field
+                // Update the child's devices field AND refNumberHash
                 val childRef = db.collection("children").document(childId)
                 childRef.get().addOnSuccessListener { childDoc ->
                     if (childDoc.exists()) {
@@ -204,7 +205,13 @@ class AddDeviceActivity : AppCompatActivity() {
                             "deviceType" to selectedDeviceType.lowercase()
                         )
                         
-                        childRef.update("devices", currentDevices)
+                        // Update both devices and refNumberHash so child device linking works
+                        val updates = hashMapOf(
+                            "devices" to currentDevices,
+                            "refNumberHash" to linkingCodeHash
+                        )
+                        
+                        childRef.update(updates as Map<String, Any>)
                             .addOnSuccessListener {
                                 // Navigate to waiting screen with device info
                                 val intent = Intent(this, WaitingForSetupActivity::class.java)

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.databinding.ActivityWaitingForSetupBinding
 import android.widget.Toast
@@ -19,6 +20,7 @@ class WaitingForSetupActivity : AppCompatActivity() {
     private var childId: String = ""
     private var isChecking = true
     private var isFromAddChild: Boolean = false
+    private var isChildConnected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,17 +62,23 @@ class WaitingForSetupActivity : AppCompatActivity() {
             // Flow from AddDeviceActivity - device document exists
             binding.tvDeviceName.text = deviceName
             binding.tvLinkingCode.text = linkingCode
-            binding.tvInstructions.text = "Device is waiting for setup. Configure device settings to complete connection."
+            binding.tvInstructions.text = "Share this code with your child so they can verify and link their device."
             
-            // Show setup button immediately
+            // Show setup button but keep it disabled until child connects
             binding.btnSetupDevice.visibility = android.view.View.VISIBLE
+            updateSetupButtonState(false) // Initially disabled
+            
             binding.btnSetupDevice.setOnClickListener {
-                val intent = Intent(this, DeviceSetupActivity::class.java)
-                intent.putExtra("deviceId", deviceId)
-                intent.putExtra("deviceName", deviceName)
-                intent.putExtra("childId", childId)
-                startActivity(intent)
-                finish()
+                if (isChildConnected) {
+                    val intent = Intent(this, DeviceSetupActivity::class.java)
+                    intent.putExtra("deviceId", deviceId)
+                    intent.putExtra("deviceName", deviceName)
+                    intent.putExtra("childId", childId)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    Toast.makeText(this, "Please wait for the child to verify the code first", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
@@ -100,6 +108,17 @@ class WaitingForSetupActivity : AppCompatActivity() {
         }
         handler.post(runnable)
     }
+    
+    private fun updateSetupButtonState(enabled: Boolean) {
+        binding.btnSetupDevice.isEnabled = enabled
+        if (enabled) {
+            binding.btnSetupDevice.background = ContextCompat.getDrawable(this, R.drawable.button_outline_teal)
+            binding.btnSetupDevice.setTextColor(ContextCompat.getColor(this, R.color.teal_500))
+        } else {
+            binding.btnSetupDevice.background = ContextCompat.getDrawable(this, R.drawable.button_outline_gray)
+            binding.btnSetupDevice.setTextColor(ContextCompat.getColor(this, R.color.gray_400))
+        }
+    }
 
     private fun checkDeviceStatus() {
         if (isFromAddChild) {
@@ -127,32 +146,86 @@ class WaitingForSetupActivity : AppCompatActivity() {
                     binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
                 }
         } else {
-            // Original flow - Check if device setup is complete (device is connected)
-            db.collection("devices").document(deviceId)
-                .get()
-                .addOnSuccessListener get@{ deviceDoc ->
-                    if (deviceDoc.exists()) {
-                        val isConnected = deviceDoc.getBoolean("isConnected") ?: false
-                        if (isConnected) {
-                            isChecking = false // Stop checking
-                            binding.tvStatus.text = "Device Setup Complete! Child's device is now connected."
-                            binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
-                            binding.progressBar.visibility = android.view.View.GONE
-                            binding.btnSetupDevice.visibility = android.view.View.GONE
-                            binding.btnBackToChildren.visibility = android.view.View.VISIBLE
-                            return@get
-                        }
-                    }
-
-                    // Still waiting for setup to complete
-                    binding.tvStatus.text = "Waiting for device setup to complete..."
-                    binding.progressBar.visibility = android.view.View.VISIBLE
-                }
-                .addOnFailureListener { e ->
-                    binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
-                    binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
-                }
+            // Check for child device connection first, then device setup
+            checkChildDeviceConnection()
         }
+    }
+    
+    private fun checkChildDeviceConnection() {
+        // Check if device exists and has been verified by child (has deviceName in child's devices)
+        db.collection("children").document(childId)
+            .get()
+            .addOnSuccessListener { childDoc ->
+                if (childDoc.exists()) {
+                    val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
+                    val deviceExists = devices.containsKey(deviceId)
+                    
+                    if (deviceExists && !isChildConnected) {
+                        // Child has connected! Enable setup button
+                        isChildConnected = true
+                        updateUIForChildConnected()
+                    } else if (deviceExists && isChildConnected) {
+                        // Check if device setup is complete
+                        checkDeviceSetupComplete()
+                    } else {
+                        // Still waiting for child to connect
+                        updateUIForWaiting()
+                    }
+                } else {
+                    updateUIForWaiting()
+                }
+            }
+            .addOnFailureListener { e ->
+                binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
+                binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+            }
+    }
+    
+    private fun checkDeviceSetupComplete() {
+        db.collection("devices").document(deviceId)
+            .get()
+            .addOnSuccessListener { deviceDoc ->
+                if (deviceDoc.exists()) {
+                    val isSetupComplete = deviceDoc.getBoolean("isConnected") ?: false
+                    if (isSetupComplete) {
+                        isChecking = false
+                        updateUIForSetupComplete()
+                    } else {
+                        updateUIForChildConnected() // Keep showing child connected state
+                    }
+                }
+            }
+    }
+    
+    private fun updateUIForWaiting() {
+        binding.ivStatusIcon.setImageResource(R.drawable.ic_clock)
+        binding.ivStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.gray_500))
+        binding.tvStatus.text = "Waiting for child to verify the code..."
+        binding.tvStatus.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+        binding.progressBar.visibility = android.view.View.VISIBLE
+        binding.llChildConnected.visibility = android.view.View.GONE
+        updateSetupButtonState(false)
+    }
+    
+    private fun updateUIForChildConnected() {
+        binding.ivStatusIcon.setImageResource(R.drawable.ic_check)
+        binding.ivStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_500))
+        binding.tvStatus.text = "Child verified the code successfully!"
+        binding.tvStatus.setTextColor(ContextCompat.getColor(this, R.color.teal_500))
+        binding.progressBar.visibility = android.view.View.GONE
+        binding.llChildConnected.visibility = android.view.View.VISIBLE
+        updateSetupButtonState(true)
+    }
+    
+    private fun updateUIForSetupComplete() {
+        binding.ivStatusIcon.setImageResource(R.drawable.ic_check)
+        binding.ivStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_500))
+        binding.tvStatus.text = "Device setup complete! Child's device is ready to use."
+        binding.tvStatus.setTextColor(ContextCompat.getColor(this, R.color.teal_500))
+        binding.progressBar.visibility = android.view.View.GONE
+        binding.llChildConnected.visibility = android.view.View.VISIBLE
+        binding.btnSetupDevice.visibility = android.view.View.GONE
+        binding.btnBackToChildren.visibility = android.view.View.VISIBLE
     }
 
     private fun showRemoveDeviceConfirmation() {

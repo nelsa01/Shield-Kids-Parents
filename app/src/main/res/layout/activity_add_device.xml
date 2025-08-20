@@ -418,10 +418,10 @@
             android:id="@+id/btnDone"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Done"
+            android:text="Add device"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/teal_500"
+            android:textColor="@color/white"
             android:background="@drawable/button_outline_teal"
             android:backgroundTint="@null" />
 

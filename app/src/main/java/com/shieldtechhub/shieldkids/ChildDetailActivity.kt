@@ -322,16 +322,31 @@ class ChildDetailActivity : AppCompatActivity() {
                     val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
                     
                     // Delete all associated devices first
-                    val deviceDeletions = devices.keys.map { deviceId ->
-                        db.collection("devices").document(deviceId).delete()
-                    }
-                    
-                    // Wait for all device deletions to complete, then delete child
-                    if (deviceDeletions.isNotEmpty()) {
-                        // For simplicity, we'll proceed with child deletion
-                        // In a production app, you'd want to wait for all device deletions
-                        deleteChildDocument()
+                    if (devices.isNotEmpty()) {
+                        var deletedDeviceCount = 0
+                        val totalDevices = devices.size
+                        
+                        devices.keys.forEach { deviceId ->
+                            db.collection("devices").document(deviceId)
+                                .delete()
+                                .addOnSuccessListener {
+                                    deletedDeviceCount++
+                                    if (deletedDeviceCount == totalDevices) {
+                                        // All devices deleted, now delete child
+                                        deleteChildDocument()
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    // Continue even if device deletion fails
+                                    deletedDeviceCount++
+                                    if (deletedDeviceCount == totalDevices) {
+                                        // All device deletion attempts completed
+                                        deleteChildDocument()
+                                    }
+                                }
+                        }
                     } else {
+                        // No devices, directly delete child
                         deleteChildDocument()
                     }
                 } else {

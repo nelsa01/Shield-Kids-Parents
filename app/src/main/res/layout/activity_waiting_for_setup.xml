@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -70,24 +71,74 @@
         android:gravity="center"
         android:layout_marginBottom="32dp" />
 
-    <!-- Status -->
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="wrap_content"
+    <!-- Connection Status Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Waiting for child to connect device..."
-        android:textSize="16sp"
-        android:textColor="@color/teal_500"
-        android:gravity="center"
-        android:layout_marginBottom="24dp" />
+        android:orientation="vertical"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp"
+        android:gravity="center">
 
-    <!-- Progress Bar -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:indeterminate="true"
-        android:layout_marginBottom="32dp" />
+        <!-- Status Icon -->
+        <ImageView
+            android:id="@+id/ivStatusIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_clock"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="Status Icon"
+            app:tint="@color/gray_500" />
+
+        <!-- Status Text -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Waiting for child to connect device..."
+            android:textSize="16sp"
+            android:textColor="@color/gray_600"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="visible" />
+
+        <!-- Child Connected Indicator -->
+        <LinearLayout
+            android:id="@+id/llChildConnected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone"
+            android:layout_marginTop="8dp">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_check"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Connected"
+                app:tint="@color/teal_500" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Child device connected!"
+                android:textSize="14sp"
+                android:textColor="@color/teal_500"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
     <!-- Back Button (initially hidden) -->
     <Button
@@ -109,9 +160,10 @@
         android:text="Setup Device"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:background="@drawable/button_outline_teal"
-        android:textColor="@color/teal_500"
-        android:layout_marginTop="16dp" />
+        android:background="@drawable/button_outline_gray"
+        android:textColor="@color/gray_400"
+        android:layout_marginTop="16dp"
+        android:enabled="false" />
 
     <!-- Remove Device Button -->
     <Button
@@ -120,7 +172,7 @@
         android:layout_height="48dp"
         android:text="Remove Device"
         android:textSize="14sp"
-        android:background="@drawable/button_outline_red"
+        android:background="@color/teal_600"
         android:textColor="@color/error_red"
         android:layout_marginTop="16dp" />
 
