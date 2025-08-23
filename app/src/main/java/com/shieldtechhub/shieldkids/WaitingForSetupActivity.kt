@@ -22,6 +22,8 @@ class WaitingForSetupActivity : AppCompatActivity() {
     private var isChecking = true
     private var isFromAddChild: Boolean = false
     private var isChildConnected = false
+    private var checkCount = 0
+    private val maxCheckCount = 12 // 1 minute (12 * 5 seconds)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,38 +51,33 @@ class WaitingForSetupActivity : AppCompatActivity() {
 
     private fun setupUI() {
         if (isFromAddChild) {
-            // Flow from AddChildActivity - showing reference number for child to use
-            binding.tvDeviceName.text = "Child Profile Created"
+            // Flow from AddChild -> AddDevice - showing reference number for newly created child
+            binding.tvDeviceName.text = "Device Setup for New Child"
             binding.tvLinkingCode.text = linkingCode
             binding.tvInstructions.text = "Share this reference number with your child so they can link their device to this profile."
             binding.tvStatus.text = "Waiting for child to enter this code on their device..."
-            
-            // Hide device-specific buttons for this flow
-            binding.btnSetupDevice.visibility = android.view.View.GONE
-            binding.btnRemoveDevice.visibility = android.view.View.GONE
-            binding.btnBackToChildren.visibility = android.view.View.VISIBLE
-            
         } else {
-            // Flow from AddDeviceActivity - device document exists
+            // Flow from direct AddDevice - adding device to existing child
             binding.tvDeviceName.text = deviceName
             binding.tvLinkingCode.text = linkingCode
             binding.tvInstructions.text = "Share this code with your child so they can verify and link their device."
-            
-            // Show setup button but keep it disabled until child connects
-            binding.btnSetupDevice.visibility = android.view.View.VISIBLE
-            updateSetupButtonState(false) // Initially disabled
-            
-            binding.btnSetupDevice.setOnClickListener {
-                if (isChildConnected) {
-                    val intent = Intent(this, DeviceSetupActivity::class.java)
-                    intent.putExtra("deviceId", deviceId)
-                    intent.putExtra("deviceName", deviceName)
-                    intent.putExtra("childId", childId)
-                    startActivity(intent)
-                    finish()
-                } else {
-                    Toast.makeText(this, "Please wait for the child to verify the code first", Toast.LENGTH_SHORT).show()
-                }
+            binding.tvStatus.text = "Waiting for child to verify the code..."
+        }
+        
+        // Both flows now work the same way - show setup button but keep it disabled until child connects
+        binding.btnSetupDevice.visibility = android.view.View.VISIBLE
+        updateSetupButtonState(false) // Initially disabled
+        
+        binding.btnSetupDevice.setOnClickListener {
+            if (isChildConnected) {
+                val intent = Intent(this, DeviceSetupActivity::class.java)
+                intent.putExtra("deviceId", deviceId)
+                intent.putExtra("deviceName", deviceName)
+                intent.putExtra("childId", childId)
+                startActivity(intent)
+                finish()
+            } else {
+                Toast.makeText(this, "Please wait for the child to verify the code first", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -95,20 +92,56 @@ class WaitingForSetupActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+        
+        // Add long press to restart checking (useful for timeout situations)
+        binding.btnBackToChildren.setOnLongClickListener {
+            if (!isChecking) {
+                restartDeviceStatusCheck()
+                Toast.makeText(this, "Restarting connection check...", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
     }
 
     private fun startDeviceStatusCheck() {
-        // Check device status every 2 seconds
+        // Check device status every 5 seconds with timeout
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
         val runnable = object : Runnable {
             override fun run() {
-                if (isChecking) {
+                if (isChecking && checkCount < maxCheckCount) {
+                    checkCount++
                     checkDeviceStatus()
-                    handler.postDelayed(this, 2000)
+                    handler.postDelayed(this, 5000)
+                } else if (checkCount >= maxCheckCount) {
+                    // Timeout reached
+                    onCheckTimeout()
                 }
             }
         }
         handler.post(runnable)
+    }
+    
+    private fun onCheckTimeout() {
+        isChecking = false
+        binding.progressBar.visibility = android.view.View.GONE
+        binding.tvStatus.text = "Connection timeout. Please check if the child device is online and try refreshing."
+        binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+        
+        // Add a refresh button functionality if it exists
+        binding.btnBackToChildren.visibility = android.view.View.VISIBLE
+        
+        // Show a retry option
+        Toast.makeText(this, "Connection timeout. You can try adding the device again.", Toast.LENGTH_LONG).show()
+    }
+    
+    private fun restartDeviceStatusCheck() {
+        checkCount = 0
+        isChecking = true
+        isChildConnected = false
+        binding.progressBar.visibility = android.view.View.VISIBLE
+        binding.tvStatus.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+        updateSetupButtonState(false)
+        startDeviceStatusCheck()
     }
     
     private fun updateSetupButtonState(enabled: Boolean) {
@@ -123,34 +156,9 @@ class WaitingForSetupActivity : AppCompatActivity() {
     }
 
     private fun checkDeviceStatus() {
-        if (isFromAddChild) {
-            // Check if child's devices collection has been updated (someone linked using the reference number)
-            db.collection("children").document(childId)
-                .get()
-                .addOnSuccessListener { childDoc ->
-                    if (childDoc.exists()) {
-                        val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
-                        if (devices.isNotEmpty()) {
-                            isChecking = false // Stop checking
-                            binding.tvStatus.text = "Device linked successfully! Child device is now connected."
-                            binding.tvStatus.setTextColor(resources.getColor(R.color.teal_500, null))
-                            binding.progressBar.visibility = android.view.View.GONE
-                            return@addOnSuccessListener
-                        }
-                    }
-                    
-                    // Still waiting for child to link
-                    binding.tvStatus.text = "Waiting for child to enter this code on their device..."
-                    binding.progressBar.visibility = android.view.View.VISIBLE
-                }
-                .addOnFailureListener { e ->
-                    binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
-                    binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
-                }
-        } else {
-            // Check for child device connection using pending device approach
-            checkPendingDeviceVerification()
-        }
+        // Both flows now create pending devices, so always use pending device verification
+        // The isFromAddChild flag only affects UI messaging
+        checkPendingDeviceVerification()
     }
     
     private fun checkChildDeviceConnection() {

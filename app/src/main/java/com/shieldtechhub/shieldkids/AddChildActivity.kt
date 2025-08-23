@@ -265,14 +265,10 @@ class AddChildActivity : AppCompatActivity() {
                     parentDoc.reference.update("children", currentChildren)
                         .addOnSuccessListener {
                             // Success! Child profile created successfully
-                            // Note: We don't mark this (parent's) device as child device
-                            // The actual child device will link itself using the reference number
-
-                            // Navigate to WaitingForSetupActivity instead of showing dialog
-                            val intent = Intent(this, WaitingForSetupActivity::class.java)
+                            // Navigate to AddDeviceActivity to select device type first
+                            val intent = Intent(this, AddDeviceActivity::class.java)
                             intent.putExtra("childId", childDocId)
                             intent.putExtra("childName", childName)
-                            intent.putExtra("linkingCode", refNumber)
                             intent.putExtra("isFromAddChild", true) // Flag to indicate this is from adding child
                             startActivity(intent)
                             finish()

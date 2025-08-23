@@ -12,7 +12,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.fragment.app.DialogFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -21,7 +21,7 @@ import com.google.firebase.FirebaseApp
 import com.shieldtechhub.shieldkids.databinding.BottomSheetAddChildBinding
 import java.util.Calendar
 
-class AddChildBottomSheet : BottomSheetDialogFragment() {
+class AddChildBottomSheet : DialogFragment() {
     private var _binding: BottomSheetAddChildBinding? = null
     private val binding get() = _binding!!
     
@@ -67,21 +67,32 @@ class AddChildBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetAddChildBinding.inflate(inflater, container, false)
-        return binding.root
+    override fun onCreateDialog(savedInstanceState: Bundle?): android.app.Dialog {
+        _binding = BottomSheetAddChildBinding.inflate(layoutInflater)
+        
+        val dialog = android.app.AlertDialog.Builder(requireContext(), R.style.Theme_ShieldKids_Dialog)
+            .setView(binding.root)
+            .create()
+            
+        // Make dialog background transparent to show our custom background
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        
+        return dialog
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onStart() {
+        super.onStart()
         
+        // Set up the dialog after it's created
         setupCalendarPicker()
         setupPhotoSelection()
         binding.btnSave.setOnClickListener { saveChild() }
+        
+        // Make dialog wider on larger screens
+        dialog?.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.9).toInt(),
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun setupCalendarPicker() {
@@ -360,16 +371,15 @@ class AddChildBottomSheet : BottomSheetDialogFragment() {
                             // Notify the parent activity about the new child
                             listener?.onChildAdded(childDocId, childName)
                             
-                            // Close the bottom sheet
-                            dismiss()
-                            
-                            // Navigate to WaitingForSetupActivity to show the reference code
-                            val intent = Intent(requireContext(), WaitingForSetupActivity::class.java)
+                            // Navigate to AddDeviceActivity to select device type first (before dismissing)
+                            val intent = Intent(requireContext(), AddDeviceActivity::class.java)
                             intent.putExtra("childId", childDocId)
                             intent.putExtra("childName", childName)
-                            intent.putExtra("linkingCode", refNumber)
                             intent.putExtra("isFromAddChild", true) // Flag to indicate this is from adding child
                             startActivity(intent)
+                            
+                            // Close the bottom sheet after starting activity
+                            dismiss()
                         }
                         .addOnFailureListener { e ->
                             showError("Failed to update parent: ${e.localizedMessage}")

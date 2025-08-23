@@ -16,6 +16,7 @@ class AddDeviceActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private var childId: String = ""
+    private var isFromAddChild: Boolean = false
     
     private var selectedDeviceType: String = "iOS" // Default to iOS as shown in screenshot
     private var selectedInstallMethod: String = "Link" // Default install method
@@ -26,6 +27,7 @@ class AddDeviceActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         childId = intent.getStringExtra("childId") ?: ""
+        isFromAddChild = intent.getBooleanExtra("isFromAddChild", false)
         if (childId.isEmpty()) { 
             finish()
             return 
@@ -195,7 +197,7 @@ class AddDeviceActivity : AppCompatActivity() {
                         intent.putExtra("linkingCode", linkingCode)
                         intent.putExtra("childId", childId)
                         intent.putExtra("installMethod", selectedInstallMethod)
-                        intent.putExtra("isFromAddChild", false)
+                        intent.putExtra("isFromAddChild", isFromAddChild)
                         startActivity(intent)
                         finish()
                     }

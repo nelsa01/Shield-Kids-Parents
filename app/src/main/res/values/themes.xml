@@ -8,5 +8,21 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <item name="android:fitsSystemWindows">true</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.ShieldKids.BottomSheetDialog</item>
+    </style>
+
+    <style name="ThemeOverlay.ShieldKids.BottomSheetDialog" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
+        <item name="colorPrimary">@color/teal_500</item>
+        <item name="colorSecondary">@color/teal_500</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/gray_900</item>
+    </style>
+
+    <style name="Theme.ShieldKids.Dialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="colorPrimary">@color/teal_500</item>
+        <item name="colorSecondary">@color/teal_500</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/gray_900</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 </resources>
