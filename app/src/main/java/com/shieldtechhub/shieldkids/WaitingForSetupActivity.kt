@@ -15,6 +15,7 @@ class WaitingForSetupActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     
     private var deviceId: String = ""
+    private var pendingDeviceId: String = ""
     private var deviceName: String = ""
     private var linkingCode: String = ""
     private var childId: String = ""
@@ -29,6 +30,7 @@ class WaitingForSetupActivity : AppCompatActivity() {
 
         // Get extras from intent
         deviceId = intent.getStringExtra("deviceId") ?: ""
+        pendingDeviceId = intent.getStringExtra("pendingDeviceId") ?: ""
         deviceName = intent.getStringExtra("deviceName") ?: ""
         childId = intent.getStringExtra("childId") ?: ""
         isFromAddChild = intent.getBooleanExtra("isFromAddChild", false)
@@ -146,8 +148,8 @@ class WaitingForSetupActivity : AppCompatActivity() {
                     binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
                 }
         } else {
-            // Check for child device connection first, then device setup
-            checkChildDeviceConnection()
+            // Check for child device connection using pending device approach
+            checkPendingDeviceVerification()
         }
     }
     
@@ -227,6 +229,104 @@ class WaitingForSetupActivity : AppCompatActivity() {
         binding.btnSetupDevice.visibility = android.view.View.GONE
         binding.btnBackToChildren.visibility = android.view.View.VISIBLE
     }
+    
+    private fun checkPendingDeviceVerification() {
+        // Check if child has verified the linking code by checking if device moved to child's devices
+        db.collection("children").document(childId)
+            .get()
+            .addOnSuccessListener { childDoc ->
+                if (childDoc.exists()) {
+                    val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
+                    
+                    // Check if any device in child's devices matches our pending device
+                    val hasVerifiedDevice = devices.values.any { deviceData ->
+                        when (deviceData) {
+                            is Map<*, *> -> {
+                                val deviceInfo = deviceData as Map<String, Any>
+                                deviceInfo["deviceName"] == deviceName
+                            }
+                            else -> false
+                        }
+                    }
+                    
+                    if (hasVerifiedDevice && !isChildConnected) {
+                        // Child verified! Now create the actual device and clean up pending
+                        createVerifiedDevice()
+                    } else if (hasVerifiedDevice && isChildConnected) {
+                        // Already verified, check if setup is complete
+                        if (deviceId.isNotEmpty()) {
+                            checkDeviceSetupComplete()
+                        }
+                    } else {
+                        // Still waiting for verification
+                        updateUIForWaiting()
+                    }
+                } else {
+                    updateUIForWaiting()
+                }
+            }
+            .addOnFailureListener { e ->
+                binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
+                binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+            }
+    }
+    
+    private fun createVerifiedDevice() {
+        if (pendingDeviceId.isEmpty()) return
+        
+        // Get the pending device data
+        db.collection("pending_devices").document(pendingDeviceId)
+            .get()
+            .addOnSuccessListener { pendingDoc ->
+                if (pendingDoc.exists()) {
+                    // Create full device document with all settings
+                    val device = hashMapOf(
+                        "childId" to childId,
+                        "deviceName" to deviceName,
+                        "deviceType" to (pendingDoc.getString("deviceType") ?: "android"),
+                        "linkingCode" to linkingCode,
+                        "installMethod" to (pendingDoc.getString("installMethod") ?: "Link"),
+                        "isConnected" to false,
+                        "createdAt" to System.currentTimeMillis(),
+                        "settings" to hashMapOf(
+                            "screenTime" to 0,
+                            "geofence" to hashMapOf(
+                                "enabled" to false,
+                                "locations" to listOf<Double>()
+                            ),
+                            "contentFilter" to hashMapOf(
+                                "enabled" to false,
+                                "categories" to listOf<String>()
+                            ),
+                            "appRestrictions" to hashMapOf(
+                                "enabled" to false,
+                                "blockedApps" to listOf<String>()
+                            )
+                        )
+                    )
+                    
+                    // Create actual device document
+                    db.collection("devices").add(device)
+                        .addOnSuccessListener { deviceDocRef ->
+                            deviceId = deviceDocRef.id
+                            isChildConnected = true
+                            
+                            // Delete the pending device
+                            pendingDoc.reference.delete()
+                            
+                            // Update UI to show child connected
+                            updateUIForChildConnected()
+                        }
+                        .addOnFailureListener { e ->
+                            binding.tvStatus.text = "Error creating device: ${e.localizedMessage}"
+                            binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+                        }
+                } else {
+                    binding.tvStatus.text = "Pending device not found"
+                    binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
+                }
+            }
+    }
 
     private fun showRemoveDeviceConfirmation() {
         android.app.AlertDialog.Builder(this)
@@ -243,6 +343,18 @@ class WaitingForSetupActivity : AppCompatActivity() {
         // Show loading
         Toast.makeText(this, "Removing device...", Toast.LENGTH_SHORT).show()
 
+        if (deviceId.isNotEmpty()) {
+            // Remove verified device
+            removeVerifiedDevice()
+        } else if (pendingDeviceId.isNotEmpty()) {
+            // Remove pending device
+            removePendingDevice()
+        } else {
+            Toast.makeText(this, "No device to remove", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun removeVerifiedDevice() {
         // First, remove device from child's devices HashMap
         db.collection("children").document(childId)
             .get()
@@ -259,11 +371,7 @@ class WaitingForSetupActivity : AppCompatActivity() {
                                 .delete()
                                 .addOnSuccessListener {
                                     Toast.makeText(this, "Device '$deviceName' removed successfully", Toast.LENGTH_SHORT).show()
-                                    // Navigate back to parent dashboard
-                                    val intent = Intent(this, ParentDashboardActivity::class.java)
-                                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    startActivity(intent)
-                                    finish()
+                                    navigateBackToDashboard()
                                 }
                                 .addOnFailureListener { e ->
                                     Toast.makeText(this, "Failed to delete device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
@@ -279,6 +387,26 @@ class WaitingForSetupActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to get child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
+    }
+    
+    private fun removePendingDevice() {
+        // Simply delete the pending device document
+        db.collection("pending_devices").document(pendingDeviceId)
+            .delete()
+            .addOnSuccessListener {
+                Toast.makeText(this, "Pending device '$deviceName' removed successfully", Toast.LENGTH_SHORT).show()
+                navigateBackToDashboard()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to remove pending device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+    }
+    
+    private fun navigateBackToDashboard() {
+        val intent = Intent(this, ParentDashboardActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+        startActivity(intent)
+        finish()
     }
 
     override fun onDestroy() {

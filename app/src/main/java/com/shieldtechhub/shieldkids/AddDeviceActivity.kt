@@ -7,12 +7,14 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.databinding.ActivityAddDeviceBinding
 
 class AddDeviceActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAddDeviceBinding
     private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
     private var childId: String = ""
     
     private var selectedDeviceType: String = "iOS" // Default to iOS as shown in screenshot
@@ -162,84 +164,51 @@ class AddDeviceActivity : AppCompatActivity() {
         // Generate device name based on type
         val deviceName = "$selectedDeviceType Device"
         
-        // Create device with proper structure
-        val device = hashMapOf(
+        // Create pending device with minimal structure
+        val pendingDevice = hashMapOf(
             "childId" to childId,
             "deviceName" to deviceName,
             "deviceType" to selectedDeviceType.lowercase(),
             "linkingCode" to linkingCode,
+            "linkingCodeHash" to linkingCodeHash,
             "installMethod" to selectedInstallMethod,
-            "isConnected" to false,
             "createdAt" to System.currentTimeMillis(),
-            "settings" to hashMapOf(
-                "screenTime" to 0,
-                "geofence" to hashMapOf(
-                    "enabled" to false,
-                    "locations" to listOf<Double>()
-                ),
-                "contentFilter" to hashMapOf(
-                    "enabled" to false,
-                    "categories" to listOf<String>()
-                ),
-                "appRestrictions" to hashMapOf(
-                    "enabled" to false,
-                    "blockedApps" to listOf<String>()
-                )
-            )
+            "expiresAt" to (System.currentTimeMillis() + 24 * 60 * 60 * 1000), // 24 hours
+            "parentId" to auth.currentUser?.uid
         )
 
         // Show loading
         binding.btnDone.text = "Creating..."
         binding.btnDone.isEnabled = false
 
-        // Save device to Firestore
-        db.collection("devices").add(device)
+        // Save to pending_devices collection (NOT devices)
+        db.collection("pending_devices").add(pendingDevice)
             .addOnSuccessListener { documentReference ->
-                // Update the child's devices field AND refNumberHash
+                // Update child's refNumberHash for verification, but DON'T add to devices
                 val childRef = db.collection("children").document(childId)
-                childRef.get().addOnSuccessListener { childDoc ->
-                    if (childDoc.exists()) {
-                        val currentDevices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
-                        currentDevices[documentReference.id] = hashMapOf(
-                            "deviceName" to deviceName,
-                            "deviceType" to selectedDeviceType.lowercase()
-                        )
-                        
-                        // Update both devices and refNumberHash so child device linking works
-                        val updates = hashMapOf(
-                            "devices" to currentDevices,
-                            "refNumberHash" to linkingCodeHash
-                        )
-                        
-                        childRef.update(updates as Map<String, Any>)
-                            .addOnSuccessListener {
-                                // Navigate to waiting screen with device info
-                                val intent = Intent(this, WaitingForSetupActivity::class.java)
-                                intent.putExtra("deviceId", documentReference.id)
-                                intent.putExtra("deviceName", deviceName)
-                                intent.putExtra("linkingCode", linkingCode)
-                                intent.putExtra("childId", childId)
-                                intent.putExtra("installMethod", selectedInstallMethod)
-                                intent.putExtra("isFromAddChild", false)
-                                startActivity(intent)
-                                finish()
-                            }
-                            .addOnFailureListener { e ->
-                                binding.btnDone.text = "Done"
-                                binding.btnDone.isEnabled = true
-                                Toast.makeText(this, "Failed to update child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                            }
-                    } else {
+                childRef.update("refNumberHash", linkingCodeHash)
+                    .addOnSuccessListener {
+                        // Navigate to waiting screen with pending device info
+                        val intent = Intent(this, WaitingForSetupActivity::class.java)
+                        intent.putExtra("pendingDeviceId", documentReference.id)
+                        intent.putExtra("deviceName", deviceName)
+                        intent.putExtra("linkingCode", linkingCode)
+                        intent.putExtra("childId", childId)
+                        intent.putExtra("installMethod", selectedInstallMethod)
+                        intent.putExtra("isFromAddChild", false)
+                        startActivity(intent)
+                        finish()
+                    }
+                    .addOnFailureListener { e ->
                         binding.btnDone.text = "Done"
                         binding.btnDone.isEnabled = true
-                        Toast.makeText(this, "Child document not found", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Failed to update child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                     }
-                }
             }
             .addOnFailureListener { e -> 
                 binding.btnDone.text = "Done"
                 binding.btnDone.isEnabled = true
-                Toast.makeText(this, "Failed to add device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show() 
+                Toast.makeText(this, "Failed to create pending device: ${e.localizedMessage}", Toast.LENGTH_SHORT).show() 
             }
     }
 }
