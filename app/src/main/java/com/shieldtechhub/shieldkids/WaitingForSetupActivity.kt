@@ -220,11 +220,17 @@ class WaitingForSetupActivity : AppCompatActivity() {
     private fun updateUIForChildConnected() {
         binding.ivStatusIcon.setImageResource(R.drawable.ic_check)
         binding.ivStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.teal_500))
-        binding.tvStatus.text = "Child verified the code successfully!"
+        binding.tvStatus.text = "Device linked successfully! Child has connected their device."
         binding.tvStatus.setTextColor(ContextCompat.getColor(this, R.color.teal_500))
         binding.progressBar.visibility = android.view.View.GONE
         binding.llChildConnected.visibility = android.view.View.VISIBLE
-        updateSetupButtonState(true)
+        
+        // Clean up pending device since child has linked directly
+        cleanupPendingDevice()
+        
+        // Show back to children button instead of setup button since device is already linked
+        binding.btnSetupDevice.visibility = android.view.View.GONE
+        binding.btnBackToChildren.visibility = android.view.View.VISIBLE
     }
     
     private fun updateUIForSetupComplete() {
@@ -239,34 +245,32 @@ class WaitingForSetupActivity : AppCompatActivity() {
     }
     
     private fun checkPendingDeviceVerification() {
-        // Check if child has verified the linking code by checking if device moved to child's devices
+        // Check if child has used the reference number by checking if refNumberHash was cleared
         db.collection("children").document(childId)
             .get()
             .addOnSuccessListener { childDoc ->
                 if (childDoc.exists()) {
+                    val refNumberHash = childDoc.getString("refNumberHash") ?: ""
                     val devices = childDoc.get("devices") as? HashMap<String, Any> ?: HashMap()
                     
-                    // Check if any device in child's devices matches our pending device
-                    val hasVerifiedDevice = devices.values.any { deviceData ->
-                        when (deviceData) {
-                            is Map<*, *> -> {
-                                val deviceInfo = deviceData as Map<String, Any>
-                                deviceInfo["deviceName"] == deviceName
-                            }
-                            else -> false
-                        }
-                    }
+                    // If refNumberHash is empty/cleared, child has successfully linked
+                    val hasChildLinked = refNumberHash.isEmpty() && devices.isNotEmpty()
                     
-                    if (hasVerifiedDevice && !isChildConnected) {
-                        // Child verified! Now create the actual device and clean up pending
-                        createVerifiedDevice()
-                    } else if (hasVerifiedDevice && isChildConnected) {
-                        // Already verified, check if setup is complete
+                    if (hasChildLinked && !isChildConnected) {
+                        // Child verified the reference number and linked their device!
+                        isChildConnected = true
+                        isChecking = false // Stop checking
+                        updateUIForChildConnected()
+                    } else if (hasChildLinked && isChildConnected) {
+                        // Already verified, check if device setup is complete
                         if (deviceId.isNotEmpty()) {
                             checkDeviceSetupComplete()
+                        } else {
+                            // No formal device document yet, but child is connected
+                            updateUIForChildConnected()
                         }
                     } else {
-                        // Still waiting for verification
+                        // Still waiting for verification (refNumberHash not cleared yet)
                         updateUIForWaiting()
                     }
                 } else {
@@ -277,6 +281,17 @@ class WaitingForSetupActivity : AppCompatActivity() {
                 binding.tvStatus.text = "Error checking status: ${e.localizedMessage}"
                 binding.tvStatus.setTextColor(resources.getColor(R.color.error_red, null))
             }
+    }
+    
+    private fun cleanupPendingDevice() {
+        // Clean up the pending device since child has linked directly to child document
+        if (pendingDeviceId.isNotEmpty()) {
+            db.collection("pending_devices").document(pendingDeviceId)
+                .delete()
+                .addOnFailureListener { 
+                    // Ignore cleanup failures - not critical
+                }
+        }
     }
     
     private fun createVerifiedDevice() {
