@@ -14,7 +14,7 @@
         android:background="@color/teal_500"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:navigationIcon="@drawable/ic_arrow_back"
-        app:title="Installed Apps"
+        app:title="Manage Apps"
         app:titleTextColor="@color/white" />
 
     <!-- Stats Section with Sync Button -->
@@ -38,25 +38,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="App Statistics"
+                android:text="Child's App Statistics"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/black" />
-
-            <Button
-                android:id="@+id/btnSyncApps"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Sync Now"
-                android:textSize="12sp"
-                android:textColor="@color/white"
-                android:background="@drawable/button_teal_rounded"
-                android:drawableStart="@drawable/ic_sync"
-                android:drawablePadding="4dp"
-                android:drawableTint="@color/white"
-                android:paddingHorizontal="12dp"
-                android:minWidth="0dp"
-                android:layout_marginStart="8dp" />
 
         </LinearLayout>
 
@@ -68,34 +53,18 @@
             android:textSize="14sp"
             android:textColor="@color/gray_600" />
 
-        <!-- Sync Status Indicator -->
-        <LinearLayout
-            android:id="@+id/layoutSyncStatus"
+        <!-- Management Info -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="8dp"
-            android:visibility="gone">
-
-            <View
-                android:id="@+id/viewSyncIndicator"
-                android:layout_width="8dp"
-                android:layout_height="8dp"
-                android:background="@drawable/circle_indicator"
-                android:backgroundTint="@color/status_success"
-                android:layout_marginEnd="8dp" />
-
-            <TextView
-                android:id="@+id/tvSyncStatus"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary"
-                android:text="Last synced: 5 minutes ago" />
-
-        </LinearLayout>
+            android:text="Tap any app to manage blocking settings"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="4dp"
+            android:drawableStart="@drawable/ic_info"
+            android:drawablePadding="4dp"
+            android:drawableTint="@color/text_secondary"
+            android:gravity="center_vertical" />
 
     </LinearLayout>
 
@@ -114,7 +83,7 @@
             android:layout_height="48dp"
             android:background="@drawable/card_background"
             app:iconifiedByDefault="false"
-            app:queryHint="Search apps..."
+            app:queryHint="Search apps to manage..."
             app:searchIcon="@drawable/ic_search" />
 
     </LinearLayout>
@@ -234,6 +203,28 @@
                 app:chipStrokeWidth="1dp" />
 
             <com.google.android.material.chip.Chip
+                android:id="@+id/chipBrowsers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Browsers"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipShopping"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Shopping"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/teal_100"
+                app:chipStrokeColor="@color/teal_500"
+                app:chipStrokeWidth="1dp" />
+
+            <com.google.android.material.chip.Chip
                 android:id="@+id/chipOther"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -271,7 +262,7 @@
             android:layout_height="match_parent">
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewApps"
+                android:id="@+id/recyclerViewAllApps"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
@@ -286,6 +277,35 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone" />
+
+        <!-- Empty State -->
+        <LinearLayout
+            android:id="@+id/layoutEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_apps"
+                android:tint="@color/gray_400"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/tvEmptyMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No apps found"
+                android:textSize="16sp"
+                android:textColor="@color/gray_600"
+                android:gravity="center"
+                android:lineSpacingMultiplier="1.2" />
+
+        </LinearLayout>
 
     </FrameLayout>
 

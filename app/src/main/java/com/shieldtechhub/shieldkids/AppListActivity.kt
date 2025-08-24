@@ -11,17 +11,28 @@ import com.shieldtechhub.shieldkids.databinding.ActivityAppListBinding
 import com.shieldtechhub.shieldkids.features.app_management.service.AppCategory
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInfo
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
+import com.shieldtechhub.shieldkids.features.app_management.service.ChildAppSyncService
+import com.shieldtechhub.shieldkids.features.app_management.service.SyncStatus
+import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
+import androidx.core.content.ContextCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 class AppListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAppListBinding
     private lateinit var appInventoryManager: AppInventoryManager
+    private lateinit var childAppSyncService: ChildAppSyncService
+    private lateinit var deviceStateManager: DeviceStateManager
     private lateinit var adapter: AppListAdapter
     
     private var allApps = listOf<AppInfo>()
     private var currentFilter = AppFilter.ALL
     private var searchQuery = ""
+    private var currentSyncStatus: SyncStatus = SyncStatus.initial()
+    private var isSyncInProgress = false
 
     enum class AppFilter {
         ALL, USER, SYSTEM, SOCIAL, GAMES, EDUCATIONAL, ENTERTAINMENT, PRODUCTIVITY, COMMUNICATION, OTHER
@@ -32,9 +43,14 @@ class AppListActivity : AppCompatActivity() {
         binding = ActivityAppListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Initialize services
         appInventoryManager = AppInventoryManager(this)
+        childAppSyncService = ChildAppSyncService.getInstance(this)
+        deviceStateManager = DeviceStateManager(this)
+        
         setupUI()
         loadApps()
+        setupSyncStatusListener()
     }
 
     private fun setupUI() {
@@ -70,6 +86,14 @@ class AppListActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             loadApps()
         }
+        
+        // Setup sync button
+        binding.btnSyncApps.setOnClickListener {
+            performManualSync()
+        }
+        
+        // Initialize sync status display
+        updateSyncStatusUI()
     }
 
     private fun setupFilterChips() {
@@ -213,5 +237,147 @@ class AppListActivity : AppCompatActivity() {
                 }
             }
             .show()
+    }
+    
+    /**
+     * Set up sync status listener to monitor sync progress
+     */
+    private fun setupSyncStatusListener() {
+        // Only set up listener if this is a child device
+        if (!deviceStateManager.isChildDevice()) {
+            binding.btnSyncApps.visibility = View.GONE
+            return
+        }
+        
+        childAppSyncService.addSyncStatusListener { syncStatus ->
+            runOnUiThread {
+                currentSyncStatus = syncStatus
+                updateSyncStatusUI()
+                
+                // Show toast for sync completion
+                if (isSyncInProgress && syncStatus.isSuccessful()) {
+                    Toast.makeText(this, "Apps synced successfully!", Toast.LENGTH_SHORT).show()
+                    isSyncInProgress = false
+                } else if (isSyncInProgress && syncStatus.hasFailed()) {
+                    Toast.makeText(this, "Sync failed: ${syncStatus.errorMessage}", Toast.LENGTH_SHORT).show()
+                    isSyncInProgress = false
+                }
+            }
+        }
+        
+        // Update UI with current status
+        currentSyncStatus = childAppSyncService.getCurrentSyncStatus()
+        updateSyncStatusUI()
+    }
+    
+    /**
+     * Perform manual sync of apps to Firebase
+     */
+    private fun performManualSync() {
+        if (isSyncInProgress) {
+            Toast.makeText(this, "Sync already in progress", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (!deviceStateManager.isChildDevice()) {
+            Toast.makeText(this, "Manual sync is only available on child devices", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        isSyncInProgress = true
+        Toast.makeText(this, "Starting app sync...", Toast.LENGTH_SHORT).show()
+        
+        lifecycleScope.launch {
+            try {
+                val success = childAppSyncService.forceFullSync()
+                if (success) {
+                    // Reload local apps to reflect any changes
+                    loadApps()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this@AppListActivity, "Sync failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    isSyncInProgress = false
+                }
+            }
+        }
+    }
+    
+    /**
+     * Update sync status UI elements
+     */
+    private fun updateSyncStatusUI() {
+        val status = currentSyncStatus
+        
+        // Update button state
+        if (status.isInProgress()) {
+            binding.btnSyncApps.text = "Syncing..."
+            binding.btnSyncApps.isEnabled = false
+            
+            // Start rotation animation
+            val rotateAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.rotation_continuous)
+            binding.btnSyncApps.compoundDrawables[0]?.let { drawable ->
+                binding.btnSyncApps.compoundDrawables[0] = drawable
+            }
+        } else {
+            binding.btnSyncApps.text = "Sync Now"
+            binding.btnSyncApps.isEnabled = true
+        }
+        
+        // Update sync status indicator
+        if (status.lastSuccessfulSyncTime > 0 || status.hasFailed()) {
+            binding.layoutSyncStatus.visibility = View.VISIBLE
+            
+            // Update status color
+            val statusColor = when {
+                status.isSuccessful() -> ContextCompat.getColor(this, R.color.status_success)
+                status.hasFailed() -> ContextCompat.getColor(this, R.color.status_error)
+                status.isInProgress() -> ContextCompat.getColor(this, R.color.status_warning)
+                else -> ContextCompat.getColor(this, R.color.text_secondary)
+            }
+            binding.viewSyncIndicator.setBackgroundColor(statusColor)
+            
+            // Update status text
+            val statusText = when {
+                status.isInProgress() -> "Syncing apps... (${status.getProgressPercentage()}%)"
+                status.isSuccessful() -> {
+                    val lastSync = formatTimeAgo(status.getLastSyncDate())
+                    "Last synced: $lastSync • ${status.totalAppsCount} apps"
+                }
+                status.hasFailed() -> "Sync failed: ${status.errorMessage}"
+                else -> "Ready to sync"
+            }
+            binding.tvSyncStatus.text = statusText
+        } else {
+            binding.layoutSyncStatus.visibility = View.GONE
+        }
+    }
+    
+    /**
+     * Format time ago string
+     */
+    private fun formatTimeAgo(date: Date?): String {
+        if (date == null) return "Never"
+        
+        val now = System.currentTimeMillis()
+        val diff = now - date.time
+        
+        return when {
+            diff < 60_000 -> "Just now"
+            diff < 3_600_000 -> "${diff / 60_000} min ago"
+            diff < 86_400_000 -> "${diff / 3_600_000}h ago"
+            else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(date)
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        
+        // Clean up sync status listener
+        try {
+            childAppSyncService.removeSyncStatusListener { }
+        } catch (e: Exception) {
+            // Ignore cleanup errors
+        }
     }
 }

@@ -178,6 +178,12 @@ class PermissionRequestActivity : AppCompatActivity() {
                     )
                 }
             }
+            com.shieldtechhub.shieldkids.common.utils.PermissionManager.DEVICE_ADMIN_PERMISSION -> {
+                val deviceAdminManager = com.shieldtechhub.shieldkids.common.utils.DeviceAdminManager(this)
+                if (!deviceAdminManager.isDeviceAdminActive()) {
+                    showDeviceAdminPermissionDialog()
+                }
+            }
         }
     }
 
@@ -297,6 +303,20 @@ class PermissionRequestActivity : AppCompatActivity() {
         
         // Refresh the permission display
         checkAndDisplayPermissions()
+    }
+
+    private fun showDeviceAdminPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Device Administrator Required")
+            .setMessage("Shield Kids needs device administrator permissions to:\n\n• Block harmful apps\n• Enforce screen time limits\n• Protect device settings\n• Ensure parental controls work properly\n\nYou'll be taken to the device admin setup screen.")
+            .setPositiveButton("Enable Device Admin") { _, _ ->
+                val intent = Intent(this, DeviceAdminSetupActivity::class.java)
+                startActivity(intent)
+            }
+            .setNegativeButton("Skip") { _, _ ->
+                Toast.makeText(this, "Device admin is required for full parental control functionality", Toast.LENGTH_LONG).show()
+            }
+            .show()
     }
 
     override fun onResume() {

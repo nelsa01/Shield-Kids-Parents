@@ -37,6 +37,30 @@
     
     <!-- Status colors -->
     <color name="green_500">#FF4CAF50</color>
+    <color name="green_600">#FF43A047</color>
     <color name="red_500">#FFF44336</color>
+    <color name="red_600">#FFE53935</color>
     <color name="orange_light">#FFFFF3E0</color>
+    <color name="orange_500">#FFFF9800</color>
+    <color name="orange_600">#FFFB8C00</color>
+    <color name="blue_500">#FF2196F3</color>
+    <color name="blue_600">#FF1E88E5</color>
+    
+    <!-- Category colors -->
+    <color name="category_social">#FFE91E63</color>
+    <color name="category_games">#FF9C27B0</color>
+    <color name="category_educational">#FF2196F3</color>
+    <color name="category_entertainment">#FFFF5722</color>
+    <color name="category_browsers">#FF3F51B5</color>
+    <color name="category_shopping">#FF4CAF50</color>
+    <color name="category_other">#FF607D8B</color>
+    
+    <!-- UI Color Aliases -->
+    <color name="primary_color">@color/teal_500</color>
+    <color name="text_primary">@color/gray_900</color>
+    <color name="text_secondary">@color/gray_600</color>
+    <color name="status_success">@color/green_500</color>
+    <color name="status_warning">@color/orange_500</color>
+    <color name="status_error">@color/red_500</color>
+    <color name="progress_background">@color/gray_200</color>
 </resources>

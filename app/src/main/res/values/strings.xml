@@ -27,4 +27,7 @@
     <string name="view_children">View Children</string>
     <string name="default_notification_channel_id">\nNotification Channel</string>
     <string name="accessibility_service_description">Shield Kids uses this accessibility service to monitor app usage and enforce parental controls. This service can detect when apps are launched and block access to restricted apps to keep your child safe.</string>
+    
+    <!-- Policy Enforcement Service Descriptions -->
+    <string name="installation_blocking_service_description">Monitors and blocks app installations as configured by parental controls</string>
 </resources>

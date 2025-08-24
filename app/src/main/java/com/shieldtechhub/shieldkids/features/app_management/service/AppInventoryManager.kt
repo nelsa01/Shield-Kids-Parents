@@ -246,7 +246,9 @@ enum class AppCategory {
     PRODUCTIVITY,
     COMMUNICATION,
     SYSTEM,
-    OTHER
+    OTHER,
+    BROWSERS,
+    SHOPPING
 }
 
 data class AppInventoryResult(

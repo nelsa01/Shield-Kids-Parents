@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardUseCompatPadding="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:id="@+id/ivSyncIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_sync"
+                android:tint="@color/primary_color"
+                tools:ignore="UseAppTint" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="App Sync Status"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginStart="8dp" />
+
+            <TextView
+                android:id="@+id/tvLastSyncTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                tools:text="2 min ago" />
+
+        </LinearLayout>
+
+        <!-- Status Info -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <View
+                android:id="@+id/viewStatusIndicator"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/circle_indicator"
+                android:backgroundTint="@color/status_success"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvSyncStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="14sp"
+                android:textColor="@color/text_primary"
+                tools:text="All apps synced successfully" />
+
+            <TextView
+                android:id="@+id/tvAppCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:background="@drawable/badge_background_green"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                tools:text="47 apps" />
+
+        </LinearLayout>
+
+        <!-- Progress Bar (shown during sync) -->
+        <ProgressBar
+            android:id="@+id/progressBarSync"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            android:progressTint="@color/primary_color"
+            android:progressBackgroundTint="@color/progress_background"
+            tools:progress="75"
+            tools:visibility="visible" />
+
+        <!-- Progress Text -->
+        <TextView
+            android:id="@+id/tvProgressText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"
+            tools:text="Syncing apps... (35/47)"
+            tools:visibility="visible" />
+
+        <!-- Details Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <!-- Sync Health -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivHealthIndicator"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_check_circle"
+                    android:tint="@color/status_success"
+                    android:layout_marginEnd="4dp"
+                    tools:ignore="UseAppTint" />
+
+                <TextView
+                    android:id="@+id/tvSyncHealth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary"
+                    tools:text="Healthy" />
+
+            </LinearLayout>
+
+            <!-- Network Status -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivNetworkIndicator"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_wifi"
+                    android:tint="@color/status_success"
+                    android:layout_marginEnd="4dp"
+                    tools:ignore="UseAppTint" />
+
+                <TextView
+                    android:id="@+id/tvNetworkStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary"
+                    tools:text="Online" />
+
+            </LinearLayout>
+
+            <!-- Manual Sync Button -->
+            <ImageButton
+                android:id="@+id/btnRefreshSync"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_refresh"
+                android:background="@drawable/ripple_circle"
+                android:contentDescription="Force sync"
+                android:tint="@color/text_secondary"
+                android:scaleType="centerInside"
+                tools:ignore="UseAppTint" />
+
+        </LinearLayout>
+
+        <!-- Error/Warning Message (shown when needed) -->
+        <TextView
+            android:id="@+id/tvErrorMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/status_error"
+            android:background="@drawable/background_error_message"
+            android:padding="8dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            android:drawableStart="@drawable/ic_warning"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/status_error"
+            tools:text="Sync failed: Network timeout. Will retry automatically."
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

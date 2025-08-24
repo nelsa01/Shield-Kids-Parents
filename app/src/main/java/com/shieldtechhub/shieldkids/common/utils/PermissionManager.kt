@@ -28,6 +28,7 @@ class PermissionManager(private val context: Context) {
     
     companion object {
         const val REQUEST_CODE_PERMISSIONS = 1001
+        const val DEVICE_ADMIN_PERMISSION = "android.app.action.DEVICE_ADMIN_ENABLED"
         
         // Essential permissions for Shield Kids
         val ESSENTIAL_PERMISSIONS = arrayOf(
@@ -35,7 +36,8 @@ class PermissionManager(private val context: Context) {
             Manifest.permission.SYSTEM_ALERT_WINDOW,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.QUERY_ALL_PACKAGES
+            Manifest.permission.QUERY_ALL_PACKAGES,
+            DEVICE_ADMIN_PERMISSION
         )
         
         // Optional permissions
@@ -55,6 +57,9 @@ class PermissionManager(private val context: Context) {
             }
             Manifest.permission.SYSTEM_ALERT_WINDOW -> {
                 hasOverlayPermission()
+            }
+            DEVICE_ADMIN_PERMISSION -> {
+                hasDeviceAdminPermission()
             }
             else -> {
                 ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
@@ -162,7 +167,8 @@ class PermissionManager(private val context: Context) {
     fun isSpecialPermissionRequired(permission: String): Boolean {
         return when (permission) {
             Manifest.permission.SYSTEM_ALERT_WINDOW,
-            Manifest.permission.PACKAGE_USAGE_STATS -> true
+            Manifest.permission.PACKAGE_USAGE_STATS,
+            DEVICE_ADMIN_PERMISSION -> true
             else -> false
         }
     }
@@ -174,6 +180,7 @@ class PermissionManager(private val context: Context) {
             Manifest.permission.ACCESS_FINE_LOCATION -> "Precise location for geofencing features"
             Manifest.permission.ACCESS_COARSE_LOCATION -> "Approximate location for geofencing features"
             Manifest.permission.QUERY_ALL_PACKAGES -> "Access to installed apps for parental controls"
+            DEVICE_ADMIN_PERMISSION -> "Device administrator permissions for app blocking and policy enforcement"
             Manifest.permission.CAMERA -> "Camera access for profile photos"
             Manifest.permission.READ_EXTERNAL_STORAGE -> "Access to photos for profile images"
             Manifest.permission.WRITE_EXTERNAL_STORAGE -> "Save photos and reports"
@@ -277,5 +284,10 @@ class PermissionManager(private val context: Context) {
         } else {
             true // Permission not required on older versions
         }
+    }
+    
+    private fun hasDeviceAdminPermission(): Boolean {
+        val deviceAdminManager = DeviceAdminManager(context)
+        return deviceAdminManager.isDeviceAdminActive()
     }
 }

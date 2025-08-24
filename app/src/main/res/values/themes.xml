@@ -25,4 +25,10 @@
         <item name="colorOnSurface">@color/gray_900</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
+
+    <style name="SwitchTheme" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="colorControlActivated">@color/teal_500</item>
+        <item name="colorSwitchThumbNormal">@color/gray_400</item>
+        <item name="android:colorForeground">@color/teal_500</item>
+    </style>
 </resources>

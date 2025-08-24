@@ -54,7 +54,7 @@ class DeviceSettingsActivity : AppCompatActivity() {
         
         // General section options
         binding.btnApps.setOnClickListener {
-            val intent = Intent(this, AppListActivity::class.java)
+            val intent = Intent(this, AppManagementActivity::class.java)
             intent.putExtra("childId", childId)
             intent.putExtra("deviceId", deviceId)
             startActivity(intent)

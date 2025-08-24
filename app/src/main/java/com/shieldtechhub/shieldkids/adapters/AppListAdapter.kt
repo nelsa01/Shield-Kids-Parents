@@ -97,6 +97,8 @@ class AppListAdapter(
                 AppCategory.COMMUNICATION -> "Communication"
                 AppCategory.SYSTEM -> "System"
                 AppCategory.OTHER -> "Other"
+                AppCategory.BROWSERS -> "Browsers"
+                AppCategory.SHOPPING -> "Shopping"
             }
         }
 
@@ -110,6 +112,8 @@ class AppListAdapter(
                 AppCategory.COMMUNICATION -> R.drawable.badge_communication
                 AppCategory.SYSTEM -> R.drawable.badge_system
                 AppCategory.OTHER -> R.drawable.badge_other
+                AppCategory.BROWSERS -> R.drawable.badge_productivity // Reuse productivity badge
+                AppCategory.SHOPPING -> R.drawable.badge_other // Reuse other badge
             }
         }
 
@@ -123,6 +127,8 @@ class AppListAdapter(
                 AppCategory.COMMUNICATION -> R.color.white
                 AppCategory.SYSTEM -> R.color.white
                 AppCategory.OTHER -> R.color.gray_600
+                AppCategory.BROWSERS -> R.color.white
+                AppCategory.SHOPPING -> R.color.gray_600
             }
         }
     }

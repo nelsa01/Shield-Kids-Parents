@@ -13,7 +13,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import com.shieldtechhub.shieldkids.databinding.ActivityChildModeBinding
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
+import com.shieldtechhub.shieldkids.features.app_management.service.ChildAppSyncService
 import com.shieldtechhub.shieldkids.features.policy.PolicyEnforcementManager
+import com.shieldtechhub.shieldkids.features.policy.PolicySyncManager
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -24,8 +26,10 @@ class ChildModeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChildModeBinding
     private lateinit var deviceStateManager: DeviceStateManager
     private lateinit var policyManager: PolicyEnforcementManager
+    private lateinit var policySyncManager: PolicySyncManager
     private lateinit var screenTimeCollector: ScreenTimeCollector
     private lateinit var appInventoryManager: AppInventoryManager
+    private lateinit var childAppSyncService: ChildAppSyncService
     
     // Device status monitoring
     private val db = FirebaseFirestore.getInstance()
@@ -41,8 +45,10 @@ class ChildModeActivity : AppCompatActivity() {
         // Initialize managers
         deviceStateManager = DeviceStateManager(this)
         policyManager = PolicyEnforcementManager.getInstance(this)
+        policySyncManager = PolicySyncManager.getInstance(this)
         screenTimeCollector = ScreenTimeCollector.getInstance(this)
         appInventoryManager = AppInventoryManager(this)
+        childAppSyncService = ChildAppSyncService.getInstance(this)
 
         // Verify this is actually a child device
         if (!deviceStateManager.isChildDevice()) {
@@ -237,6 +243,14 @@ class ChildModeActivity : AppCompatActivity() {
     }
 
     private fun startMonitoringServices() {
+        // Start policy sync listener to receive policies from parent
+        policySyncManager.startPolicySync()
+        android.util.Log.i("ChildModeActivity", "Started policy sync listener")
+        
+        // Start app inventory sync to send child's apps to Firebase
+        childAppSyncService.startSync()
+        android.util.Log.i("ChildModeActivity", "Started child app sync service")
+        
         // Ensure policy enforcement is active
         if (!policyManager.validatePolicyIntegrity()) {
             // Policy integrity check failed - notify parent
@@ -248,6 +262,15 @@ class ChildModeActivity : AppCompatActivity() {
             try {
                 // Trigger initial collection
                 screenTimeCollector.collectDailyUsageData()
+                
+                // Perform immediate app sync on startup
+                val syncSuccess = childAppSyncService.performImmediateSync()
+                if (syncSuccess) {
+                    android.util.Log.i("ChildModeActivity", "Initial app sync completed successfully")
+                } else {
+                    android.util.Log.w("ChildModeActivity", "Initial app sync failed")
+                }
+                
             } catch (e: Exception) {
                 // Screen time collection failed - continue but log
                 android.util.Log.w("ChildModeActivity", "Failed to start screen time collection", e)
@@ -430,6 +453,16 @@ class ChildModeActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+        
+        // Stop all sync services
+        try {
+            policySyncManager.stopPolicySync()
+            childAppSyncService.stopSync()
+            android.util.Log.i("ChildModeActivity", "Stopped policy and app sync services")
+        } catch (e: Exception) {
+            android.util.Log.w("ChildModeActivity", "Error stopping sync services", e)
+        }
+        
         // Stop monitoring when activity is destroyed
         stopDeviceStatusMonitoring()
     }
