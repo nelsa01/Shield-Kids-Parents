@@ -155,18 +155,55 @@ class AllAppsActivity : AppCompatActivity() {
                 showLoading(true)
                 
                 Log.d("AllAppsActivity", "Loading apps for child: $childId, device: $deviceId")
+                Log.d("AllAppsActivity", "Firebase path: children/$childId/devices/$deviceId/data/appInventory")
+                
+                // Add initial delay to ensure Firebase is ready
+                kotlinx.coroutines.delay(1500)
+                
+                // First, find the actual device document name
+                val devicesCollection = db.collection("children")
+                    .document(childId)
+                    .collection("devices")
+                    .get()
+                    .await()
+                
+                val actualDeviceId = devicesCollection.documents
+                    .firstOrNull { doc -> doc.id.contains(deviceId) }?.id
+                
+                Log.d("AllAppsActivity", "Found device documents: ${devicesCollection.documents.map { it.id }}")
+                Log.d("AllAppsActivity", "Looking for deviceId: $deviceId")
+                Log.d("AllAppsActivity", "Matched actual device ID: $actualDeviceId")
+                
+                // Use simplified device ID format: device_{deviceId} (no timestamp)
+                val expectedDeviceDocId = "device_$deviceId"
                 
                 val appInventoryRef = db.collection("children")
                     .document(childId)
                     .collection("devices")
-                    .document(deviceId)
+                    .document(expectedDeviceDocId)
                     .collection("data")
                     .document("appInventory")
                 
+                Log.d("AllAppsActivity", "Using simplified path: children/$childId/devices/$expectedDeviceDocId/data/appInventory")
+                
                 val snapshot = appInventoryRef.get().await()
                 
+                Log.d("AllAppsActivity", "App inventory document exists: ${snapshot.exists()}")
+                
+                if (!snapshot.exists()) {
+                    Log.w("AllAppsActivity", "App inventory document not found")
+                    showNoAppsMessage()
+                    return@launch
+                }
+                
+                Log.d("AllAppsActivity", "Document exists: ${snapshot.exists()}")
+                
                 if (snapshot.exists()) {
+                    Log.d("AllAppsActivity", "Document data keys: ${snapshot.data?.keys}")
+                    
                     val appsData = snapshot.get("apps") as? List<Map<String, Any>>
+                    Log.d("AllAppsActivity", "Apps data found: ${appsData != null}")
+                    Log.d("AllAppsActivity", "Apps data size: ${appsData?.size ?: 0}")
                     
                     if (appsData != null) {
                         allApps = appsData.mapNotNull { appData ->
@@ -209,6 +246,10 @@ class AllAppsActivity : AppCompatActivity() {
                     }
                 } else {
                     Log.w("AllAppsActivity", "App inventory document not found in Firebase")
+                    Log.w("AllAppsActivity", "Expected path: children/$childId/devices/$deviceId/data/appInventory")
+                    
+                    // Debug: Check what actually exists in Firebase
+                    debugFirebasePath()
                     showNoAppsMessage()
                 }
                 
@@ -407,6 +448,46 @@ class AllAppsActivity : AppCompatActivity() {
                 true
             }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    private fun debugFirebasePath() {
+        lifecycleScope.launch {
+            try {
+                Log.d("AllAppsActivity", "=== Firebase Path Debug ===")
+                
+                // Check if child document exists
+                val childDoc = db.collection("children").document(childId).get().await()
+                Log.d("AllAppsActivity", "Child document exists: ${childDoc.exists()}")
+                if (childDoc.exists()) {
+                    Log.d("AllAppsActivity", "Child data keys: ${childDoc.data?.keys}")
+                }
+                
+                // Check if devices collection exists
+                val devicesCollection = db.collection("children").document(childId).collection("devices").get().await()
+                Log.d("AllAppsActivity", "Devices collection size: ${devicesCollection.size()}")
+                if (devicesCollection.size() > 0) {
+                    Log.d("AllAppsActivity", "Device IDs found: ${devicesCollection.documents.map { it.id }}")
+                }
+                
+                // Check if specific device exists
+                val deviceDoc = db.collection("children").document(childId).collection("devices").document(deviceId).get().await()
+                Log.d("AllAppsActivity", "Device document exists: ${deviceDoc.exists()}")
+                if (deviceDoc.exists()) {
+                    Log.d("AllAppsActivity", "Device data keys: ${deviceDoc.data?.keys}")
+                }
+                
+                // Check if data collection exists
+                val dataCollection = db.collection("children").document(childId).collection("devices").document(deviceId).collection("data").get().await()
+                Log.d("AllAppsActivity", "Data collection size: ${dataCollection.size()}")
+                if (dataCollection.size() > 0) {
+                    Log.d("AllAppsActivity", "Data documents found: ${dataCollection.documents.map { it.id }}")
+                }
+                
+                Log.d("AllAppsActivity", "=== End Firebase Debug ===")
+            } catch (e: Exception) {
+                Log.e("AllAppsActivity", "Firebase debug failed", e)
+            }
         }
     }
 }

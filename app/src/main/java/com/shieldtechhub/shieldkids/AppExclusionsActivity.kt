@@ -123,10 +123,13 @@ class AppExclusionsActivity : AppCompatActivity() {
         try {
             Log.d("AppExclusions", "Loading apps for child: $childId, device: $deviceId")
             
+            // Use simplified device ID format: device_{deviceId} (no timestamp)
+            val expectedDeviceDocId = "device_$deviceId"
+            
             val appInventoryRef = db.collection("children")
                 .document(childId)
                 .collection("devices")
-                .document(deviceId)
+                .document(expectedDeviceDocId)
                 .collection("data")
                 .document("appInventory")
             

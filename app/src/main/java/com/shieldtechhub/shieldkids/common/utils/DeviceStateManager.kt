@@ -34,18 +34,37 @@ class DeviceStateManager(private val context: Context) {
      */
     fun getDeviceId(): String {
         var deviceId = prefs.getString(KEY_DEVICE_ID, null)
-        if (deviceId == null) {
+        
+        // Check if we have an old format device ID with timestamp and migrate it
+        if (deviceId != null && deviceId.contains("_") && deviceId.split("_").size > 2) {
+            Log.i("DeviceStateManager", "Migrating old device ID format: $deviceId")
+            // Extract just the android ID part and regenerate
+            val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            deviceId = "device_$androidId"
+            prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
+            Log.i("DeviceStateManager", "Migrated to new device ID format: $deviceId")
+        } else if (deviceId == null) {
             // Generate a unique device ID based on Android ID and app instance
             deviceId = generateDeviceId()
             prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
+            Log.i("DeviceStateManager", "Generated new device ID: $deviceId")
         }
+        
         return deviceId
     }
     
     private fun generateDeviceId(): String {
         val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        val timestamp = System.currentTimeMillis()
-        return "device_${androidId}_$timestamp"
+        return "device_$androidId"
+    }
+    
+    /**
+     * Clear cached device ID to force re-generation with new format
+     * Use this when migrating to new device ID format
+     */
+    fun clearDeviceId() {
+        prefs.edit().remove(KEY_DEVICE_ID).apply()
+        Log.i("DeviceStateManager", "Cleared cached device ID - will regenerate with new format")
     }
     
     /**

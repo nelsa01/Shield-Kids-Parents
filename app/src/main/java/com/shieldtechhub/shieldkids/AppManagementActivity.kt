@@ -42,7 +42,10 @@ class AppManagementActivity : AppCompatActivity() {
         deviceId = intent.getStringExtra("deviceId") ?: ""
         childId = intent.getStringExtra("childId") ?: ""
         
+        Log.d("AppManagementActivity", "Received deviceId: '$deviceId', childId: '$childId'")
+        
         if (deviceId.isEmpty() || childId.isEmpty()) {
+            Log.e("AppManagementActivity", "Missing required parameters - deviceId: '$deviceId', childId: '$childId'")
             Toast.makeText(this, "Missing device or child information", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -165,57 +168,116 @@ class AppManagementActivity : AppCompatActivity() {
                 
                 Log.d("AppManagement", "Loading apps for child: $childId, device: $deviceId")
                 
+                // Add initial delay to ensure Firebase is ready
+                kotlinx.coroutines.delay(1000)
+                
+                // Debug: First check if child document exists and what it contains
+                val childDoc = db.collection("children").document(childId).get().await()
+                Log.d("AppManagement", "=== CHILD DOCUMENT DEBUG ===")
+                Log.d("AppManagement", "Child document exists: ${childDoc.exists()}")
+                if (childDoc.exists()) {
+                    Log.d("AppManagement", "Child document data keys: ${childDoc.data?.keys}")
+                    
+                    // Check if devices data is stored directly in the child document
+                    val devicesField = childDoc.data?.get("devices")
+                    if (devicesField != null) {
+                        Log.d("AppManagement", "Found devices field in child document: $devicesField")
+                    }
+                }
+                
+                // Check what's directly under the child document
+                val childCollections = listOf("devices", "device") // Check both possible collection names
+                for (collectionName in childCollections) {
+                    try {
+                        val collection = db.collection("children")
+                            .document(childId)
+                            .collection(collectionName)
+                            .get()
+                            .await()
+                        
+                        Log.d("AppManagement", "Collection '$collectionName' size: ${collection.size()}")
+                        if (collection.size() > 0) {
+                            Log.d("AppManagement", "Documents in '$collectionName': ${collection.documents.map { "${it.id} -> ${it.data?.keys}" }}")
+                        }
+                    } catch (e: Exception) {
+                        Log.d("AppManagement", "Collection '$collectionName' doesn't exist or error: ${e.message}")
+                    }
+                }
+                
+                // Try original approach with devices collection
+                val devicesCollection = db.collection("children")
+                    .document(childId)
+                    .collection("devices")
+                    .get()
+                    .await()
+                
+                Log.d("AppManagement", "Found device documents: ${devicesCollection.documents.map { it.id }}")
+                Log.d("AppManagement", "Looking for deviceId: $deviceId")
+                
+                val actualDeviceId = devicesCollection.documents
+                    .firstOrNull { doc -> doc.id.contains(deviceId) }?.id
+                
+                Log.d("AppManagement", "Matched actual device ID: $actualDeviceId")
+                Log.d("AppManagement", "=== END DEBUG ===")
+                
+                // Use simplified device ID format: device_{deviceId} (no timestamp)
+                val expectedDeviceDocId = "device_$deviceId"
+                
                 val appInventoryRef = db.collection("children")
                     .document(childId)
                     .collection("devices")
-                    .document(deviceId)
+                    .document(expectedDeviceDocId)
                     .collection("data")
                     .document("appInventory")
                 
+                Log.d("AppManagement", "Using simplified path: children/$childId/devices/$expectedDeviceDocId/data/appInventory")
+                
                 val snapshot = appInventoryRef.get().await()
                 
-                if (snapshot.exists()) {
-                    val appsData = snapshot.get("apps") as? List<Map<String, Any>>
-                    
-                    if (appsData != null) {
-                        childApps = appsData.mapNotNull { appData ->
-                            try {
-                                AppInfo(
-                                    packageName = appData["packageName"] as? String ?: "",
-                                    name = appData["name"] as? String ?: "Unknown",
-                                    version = appData["version"] as? String ?: "1.0",
-                                    versionCode = (appData["versionCode"] as? Number)?.toLong() ?: 1L,
-                                    category = try { 
-                                        AppCategory.valueOf(appData["category"] as? String ?: "OTHER") 
-                                    } catch (e: Exception) { AppCategory.OTHER },
-                                    isSystemApp = appData["isSystemApp"] as? Boolean ?: false,
-                                    isEnabled = appData["isEnabled"] as? Boolean ?: true,
-                                    installTime = (appData["installTime"] as? Number)?.toLong() ?: System.currentTimeMillis(),
-                                    lastUpdateTime = (appData["lastUpdateTime"] as? Number)?.toLong() ?: System.currentTimeMillis(),
-                                    targetSdkVersion = (appData["targetSdkVersion"] as? Number)?.toInt() ?: 1,
-                                    permissions = (appData["permissions"] as? List<String>) ?: emptyList(),
-                                    icon = null, // No icon from Firebase
-                                    dataDir = "" // No dataDir from Firebase
-                                )
-                            } catch (e: Exception) {
-                                Log.w("AppManagement", "Failed to parse app data: $appData", e)
-                                null
-                            }
+                Log.d("AppManagement", "App inventory document exists: ${snapshot.exists()}")
+                
+                if (!snapshot.exists()) {
+                    Log.w("AppManagement", "App inventory document not found")
+                    showChildAppsNotAvailable()
+                    return@launch
+                }
+                
+                val appsData = snapshot.get("apps") as? List<Map<String, Any>>
+                
+                if (appsData != null) {
+                    childApps = appsData.mapNotNull { appData ->
+                        try {
+                            AppInfo(
+                                packageName = appData["packageName"] as? String ?: "",
+                                name = appData["name"] as? String ?: "Unknown",
+                                version = appData["version"] as? String ?: "1.0",
+                                versionCode = (appData["versionCode"] as? Number)?.toLong() ?: 1L,
+                                category = try { 
+                                    AppCategory.valueOf(appData["category"] as? String ?: "OTHER") 
+                                } catch (e: Exception) { AppCategory.OTHER },
+                                isSystemApp = appData["isSystemApp"] as? Boolean ?: false,
+                                isEnabled = appData["isEnabled"] as? Boolean ?: true,
+                                installTime = (appData["installTime"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                                lastUpdateTime = (appData["lastUpdateTime"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                                targetSdkVersion = (appData["targetSdkVersion"] as? Number)?.toInt() ?: 1,
+                                permissions = (appData["permissions"] as? List<String>) ?: emptyList(),
+                                icon = null, // No icon from Firebase
+                                dataDir = "" // No dataDir from Firebase
+                            )
+                        } catch (e: Exception) {
+                            Log.w("AppManagement", "Failed to parse app data: $appData", e)
+                            null
                         }
-                        
-                        Log.i("AppManagement", "Loaded ${childApps.size} apps from child device")
-                        updateCategoryCounts()
-                        
-                        // Load screen time data if available
-                        loadChildScreenTimeData(snapshot)
-                        
-                    } else {
-                        Log.w("AppManagement", "No apps data found in Firebase")
-                        childApps = emptyList()
-                        showChildAppsNotAvailable()
                     }
+                    
+                    Log.i("AppManagement", "Loaded ${childApps.size} apps from child device")
+                    updateCategoryCounts()
+                    
+                    // Load screen time data if available
+                    loadChildScreenTimeData(snapshot)
+                    
                 } else {
-                    Log.w("AppManagement", "App inventory document not found in Firebase")
+                    Log.w("AppManagement", "No apps data found in Firebase")
                     childApps = emptyList()
                     showChildAppsNotAvailable()
                 }
