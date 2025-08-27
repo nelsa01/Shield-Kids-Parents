@@ -1,19 +1,28 @@
 package com.shieldtechhub.shieldkids.features.app_management.adapters
 
+import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.shieldtechhub.shieldkids.R
 import com.shieldtechhub.shieldkids.databinding.ItemAppBinding
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInfo
+import com.shieldtechhub.shieldkids.features.app_management.model.AppWithUsage
 
 class AllAppsAdapter(
-    private val onAppClick: (AppInfo) -> Unit
+    private val onAppClick: (AppWithUsage) -> Unit
 ) : RecyclerView.Adapter<AllAppsAdapter.AppViewHolder>() {
 
-    private var apps: List<AppInfo> = emptyList()
+    private var apps: List<AppWithUsage> = emptyList()
 
     fun updateApps(newApps: List<AppInfo>) {
+        // Convert AppInfo to AppWithUsage (without usage data)
+        apps = newApps.map { AppWithUsage(it) }
+        notifyDataSetChanged()
+    }
+    
+    fun updateAppsWithUsage(newApps: List<AppWithUsage>) {
         apps = newApps
         notifyDataSetChanged()
     }
@@ -40,7 +49,9 @@ class AllAppsAdapter(
             }
         }
 
-        fun bind(appInfo: AppInfo) {
+        fun bind(appWithUsage: AppWithUsage) {
+            val appInfo = appWithUsage.appInfo
+            
             binding.tvAppName.text = appInfo.name
             binding.tvPackageName.text = appInfo.packageName
             binding.tvAppVersion.text = "v${appInfo.version}"
@@ -65,6 +76,21 @@ class AllAppsAdapter(
                     else -> R.color.category_other
                 }
             )
+            
+            // Show usage time if available
+            if (appWithUsage.hasUsageData && appWithUsage.usageTimeMs > 0) {
+                binding.tvUsageTime.visibility = View.VISIBLE
+                binding.tvUsageTime.text = appWithUsage.getFormattedUsageTime()
+                // Set usage time color based on usage intensity
+                try {
+                    binding.tvUsageTime.setTextColor(Color.parseColor(appWithUsage.getUsageColor()))
+                } catch (e: Exception) {
+                    // Fallback color if parsing fails
+                    binding.tvUsageTime.setTextColor(Color.parseColor("#FF9800"))
+                }
+            } else {
+                binding.tvUsageTime.visibility = View.GONE
+            }
             
             // Show app icon placeholder
             binding.ivAppIcon.setImageResource(R.drawable.ic_apps)

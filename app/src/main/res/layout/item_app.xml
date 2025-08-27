@@ -104,6 +104,21 @@
                 android:textColor="@color/teal_600"
                 android:textStyle="normal" />
 
+            <!-- Usage Time -->
+            <TextView
+                android:id="@+id/tvUsageTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="45m"
+                android:textSize="12sp"
+                android:textColor="@color/orange_600"
+                android:textStyle="bold"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/rounded_background_light"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
     </LinearLayout>

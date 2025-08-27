@@ -172,7 +172,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Today's time usage"
+                    android:text="Total usage today (all devices)"
                     android:textSize="16sp"
                     android:textColor="@color/white"
                     android:alpha="0.8" />
@@ -238,7 +238,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Screen Time"
+                        android:text="Select Device"
                         android:textSize="14sp"
                         android:textColor="@color/gray_700" />
 
@@ -342,6 +342,16 @@
 
                 </HorizontalScrollView>
 
+                <!-- Instructions -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tap any device to view screen time or access settings"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray_500"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:fontStyle="italic" />
 
             </LinearLayout>
 

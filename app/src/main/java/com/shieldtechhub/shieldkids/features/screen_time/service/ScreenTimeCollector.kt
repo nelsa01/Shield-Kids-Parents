@@ -4,10 +4,12 @@ import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
+import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
 import com.shieldtechhub.shieldkids.features.screen_time.model.AppUsageData
 import com.shieldtechhub.shieldkids.features.screen_time.model.DailyUsageSummary
 import com.shieldtechhub.shieldkids.features.screen_time.model.ScreenTimeSession
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -30,6 +32,7 @@ class ScreenTimeCollector(private val context: Context) {
     
     private val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
     private val appInventoryManager = AppInventoryManager(context)
+    private val deviceStateManager = DeviceStateManager(context)
     private val prefs = context.getSharedPreferences("screen_time_data", Context.MODE_PRIVATE)
     
     // Main collection methods
@@ -71,7 +74,8 @@ class ScreenTimeCollector(private val context: Context) {
                 screenUnlocks = getScreenUnlockCount(startOfDay, endOfDay),
                 firstUsageTime = getFirstUsageTime(startOfDay, endOfDay),
                 lastUsageTime = getLastUsageTime(startOfDay, endOfDay),
-                longestSession = getLongestSession(startOfDay, endOfDay)
+                longestSession = getLongestSession(startOfDay, endOfDay),
+                deviceId = deviceStateManager.getDeviceId()
             )
             
             // Store summary locally
@@ -88,7 +92,8 @@ class ScreenTimeCollector(private val context: Context) {
                 date = date,
                 totalScreenTimeMs = 0,
                 totalForegroundTimeMs = 0,
-                appUsageData = emptyList()
+                appUsageData = emptyList(),
+                deviceId = deviceStateManager.getDeviceId()
             )
         }
     }
@@ -380,12 +385,23 @@ class ScreenTimeCollector(private val context: Context) {
             
             // Get all stored daily summaries
             val summaries = getAllStoredSummaries()
+            val screenTimeService = ScreenTimeService.getInstance(context)
             
+            var syncCount = 0
             summaries.forEach { summary ->
-                sendSummaryToBackend(summary)
+                try {
+                    val success = screenTimeService.sendDailySummaryToFirebase(summary)
+                    if (success) {
+                        syncCount++
+                        // Mark as synced
+                        markSummaryAsSynced(summary)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to sync summary for ${formatDateKey(summary.date)}", e)
+                }
             }
             
-            Log.d(TAG, "Synced ${summaries.size} daily summaries to backend")
+            Log.d(TAG, "Successfully synced $syncCount of ${summaries.size} daily summaries to backend")
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to sync usage data to backend", e)
@@ -408,16 +424,24 @@ class ScreenTimeCollector(private val context: Context) {
         return summaries.sortedByDescending { it.date }
     }
     
-    private fun sendSummaryToBackend(summary: DailyUsageSummary) {
-        // Placeholder for Firebase implementation
-        Log.d(TAG, "Sending summary to backend: ${formatDate(summary.date)}")
-        
-        // This would integrate with Firebase Firestore
-        // Example:
-        // FirebaseFirestore.getInstance()
-        //     .collection("usage_data")
-        //     .document(formatDateKey(summary.date))
-        //     .set(summary.toMap())
+    private fun markSummaryAsSynced(summary: DailyUsageSummary) {
+        try {
+            val dateKey = formatDateKey(summary.date)
+            prefs.edit()
+                .putBoolean("synced_$dateKey", true)
+                .putLong("sync_time_$dateKey", System.currentTimeMillis())
+                .apply()
+                
+            Log.d(TAG, "Marked summary as synced: $dateKey")
+            
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to mark summary as synced", e)
+        }
+    }
+    
+    private fun isSummarySynced(summary: DailyUsageSummary): Boolean {
+        val dateKey = formatDateKey(summary.date)
+        return prefs.getBoolean("synced_$dateKey", false)
     }
     
     // Utility functions

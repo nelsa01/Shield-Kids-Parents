@@ -36,13 +36,21 @@
     <color name="teal_600">#FF00796B</color>
     
     <!-- Status colors -->
+    <color name="green_100">#FFC8E6C9</color>
+    <color name="green_300">#FFA5D6A7</color>
     <color name="green_500">#FF4CAF50</color>
     <color name="green_600">#FF43A047</color>
+    <color name="red_100">#FFEF9A9A</color>
+    <color name="red_300">#FFE57373</color>
     <color name="red_500">#FFF44336</color>
     <color name="red_600">#FFE53935</color>
+    <color name="orange_100">#FFFFE0B2</color>
+    <color name="orange_300">#FFFFCC80</color>
     <color name="orange_light">#FFFFF3E0</color>
     <color name="orange_500">#FFFF9800</color>
     <color name="orange_600">#FFFB8C00</color>
+    <color name="purple_100">#FFE1BEE7</color>
+    <color name="purple_300">#FFCE93D8</color>
     <color name="blue_500">#FF2196F3</color>
     <color name="blue_600">#FF1E88E5</color>
     
@@ -63,4 +71,14 @@
     <color name="status_warning">@color/orange_500</color>
     <color name="status_error">@color/red_500</color>
     <color name="progress_background">@color/gray_200</color>
+    
+    <!-- Screen Time Usage Colors -->
+    <color name="usage_low">@color/green_500</color>
+    <color name="usage_medium">@color/orange_500</color>
+    <color name="usage_high">@color/orange_600</color>
+    <color name="usage_very_high">@color/red_500</color>
+    
+    <!-- Additional colors -->
+    <color name="purple_600">#FF8E24AA</color>
+    <color name="red_700">#FFD32F2F</color>
 </resources>

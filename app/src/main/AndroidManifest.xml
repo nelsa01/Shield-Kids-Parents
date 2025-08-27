@@ -167,6 +167,30 @@
             android:name=".PolicyTestActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
+            
+        <!-- Policy Debug Activity - For debugging policy enforcement -->
+        <activity 
+            android:name=".PolicyDebugActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
+            
+        <!-- Screen Time Dashboard Activity -->
+        <activity 
+            android:name=".features.screen_time.ui.ScreenTimeDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
+            
+        <!-- Screen Time Debug Activity - For debugging screen time collection -->
+        <activity 
+            android:name=".features.screen_time.ui.ScreenTimeDebugActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
+            
+        <!-- Unified Sync Debug Activity - For debugging unified 5-minute sync -->
+        <activity 
+            android:name=".common.sync.UnifiedSyncDebugActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
 
         <!-- Installation Blocking Service -->
         <service

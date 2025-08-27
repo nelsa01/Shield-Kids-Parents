@@ -9,6 +9,9 @@ import androidx.core.app.NotificationCompat
 import com.shieldtechhub.shieldkids.R
 import com.shieldtechhub.shieldkids.features.policy.PolicyEnforcementManager
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
+import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
+import com.shieldtechhub.shieldkids.common.sync.UnifiedChildSyncService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -46,6 +49,9 @@ class ShieldMonitoringService : Service() {
     
     private lateinit var policyManager: PolicyEnforcementManager
     private lateinit var screenTimeCollector: ScreenTimeCollector
+    private lateinit var screenTimeService: ScreenTimeService
+    private lateinit var deviceStateManager: DeviceStateManager
+    private lateinit var unifiedSyncService: UnifiedChildSyncService
     
     override fun onCreate() {
         super.onCreate()
@@ -81,6 +87,12 @@ class ShieldMonitoringService : Service() {
     
     private fun stopMonitoring() {
         isMonitoring = false
+        
+        // Stop unified sync service if running
+        if (::unifiedSyncService.isInitialized) {
+            unifiedSyncService.stopUnifiedSync()
+        }
+        
         stopForeground(true)
         stopSelf()
     }
@@ -121,11 +133,18 @@ class ShieldMonitoringService : Service() {
     
     private fun initializeMonitoringComponents() {
         try {
-            // Initialize policy manager
+            // Initialize managers
             policyManager = PolicyEnforcementManager.getInstance(this)
-            
-            // Initialize screen time collector
             screenTimeCollector = ScreenTimeCollector.getInstance(this)
+            screenTimeService = ScreenTimeService.getInstance(this)
+            deviceStateManager = DeviceStateManager(this)
+            unifiedSyncService = UnifiedChildSyncService.getInstance(this)
+            
+            // Start unified sync service on child devices (every 5 minutes)
+            if (deviceStateManager.isChildDevice()) {
+                unifiedSyncService.startUnifiedSync()
+                android.util.Log.d("ShieldMonitoring", "Started unified child sync service (every 5 minutes)")
+            }
             
             // Start periodic data collection
             serviceScope.launch {

@@ -2,19 +2,32 @@ package com.shieldtechhub.shieldkids
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.databinding.ActivityDeviceSettingsBinding
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
+import com.shieldtechhub.shieldkids.adapters.TopAppsAdapter
+import com.shieldtechhub.shieldkids.adapters.TopAppItem
+import kotlinx.coroutines.launch
+import java.util.Date
 
 class DeviceSettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDeviceSettingsBinding
     private val db = FirebaseFirestore.getInstance()
+    private lateinit var screenTimeService: ScreenTimeService
     
     private var deviceId: String = ""
     private var deviceName: String = ""
     private var childId: String = ""
+    
+    companion object {
+        private const val TAG = "DeviceSettingsActivity"
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,8 +39,12 @@ class DeviceSettingsActivity : AppCompatActivity() {
         deviceName = intent.getStringExtra("deviceName") ?: "Unknown Device"
         childId = intent.getStringExtra("childId") ?: ""
         
+        // Initialize services
+        screenTimeService = ScreenTimeService.getInstance(this)
+        
         setupUI()
         setupClickListeners()
+        loadScreenTimeData()
     }
     
     private fun setupUI() {
@@ -164,5 +181,79 @@ class DeviceSettingsActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to get child: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
+    }
+    
+    private fun loadScreenTimeData() {
+        lifecycleScope.launch {
+            try {
+                Log.d(TAG, "Loading screen time data for device: $deviceId")
+                
+                val today = Date()
+                val usageData = screenTimeService.getDailyUsageFromFirebase(today, childId, deviceId)
+                
+                if (usageData != null) {
+                    // Extract data from Firebase response
+                    val totalScreenTimeMs = usageData["totalScreenTimeMs"] as? Long ?: 0L
+                    val screenUnlocks = usageData["screenUnlocks"] as? Long ?: 0L
+                    val appCount = usageData["appCount"] as? Long ?: 0L
+                    val topAppsData = usageData["topApps"] as? List<Map<String, Any>> ?: emptyList()
+                    
+                    // Update UI
+                    updateScreenTimeUI(totalScreenTimeMs, screenUnlocks.toInt(), appCount.toInt(), topAppsData)
+                    
+                    Log.d(TAG, "Screen time data loaded successfully")
+                } else {
+                    Log.d(TAG, "No screen time data found for today")
+                    updateScreenTimeUI(0L, 0, 0, emptyList())
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load screen time data", e)
+                updateScreenTimeUI(0L, 0, 0, emptyList())
+            }
+        }
+    }
+    
+    private fun updateScreenTimeUI(totalTimeMs: Long, unlocks: Int, appCount: Int, topApps: List<Map<String, Any>>) {
+        // Format total time
+        val totalMinutes = totalTimeMs / (1000 * 60)
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        
+        val formattedTime = when {
+            hours > 0 -> "${hours}h ${minutes}m"
+            minutes > 0 -> "${minutes}m"
+            totalTimeMs > 0 -> "<1m"
+            else -> "No data"
+        }
+        
+        // Update main stats
+        binding.tvScreenTimeTotal.text = formattedTime
+        binding.tvAppsUsed.text = appCount.toString()
+        binding.tvScreenUnlocks.text = unlocks.toString()
+        
+        // Update top apps list
+        val topAppItems = topApps.take(5).map { appData ->
+            val appName = appData["appName"] as? String ?: "Unknown App"
+            val packageName = appData["packageName"] as? String ?: ""
+            val appTimeMs = appData["totalTimeMs"] as? Long ?: 0L
+            val category = appData["category"] as? String ?: "Other"
+            
+            val appMinutes = appTimeMs / (1000 * 60)
+            val appFormattedTime = when {
+                appMinutes >= 60 -> "${appMinutes / 60}h ${appMinutes % 60}m"
+                appMinutes > 0 -> "${appMinutes}m"
+                appTimeMs > 0 -> "<1m"
+                else -> "0m"
+            }
+            
+            TopAppItem(appName, packageName, appFormattedTime, category)
+        }
+        
+        // Set up RecyclerView
+        binding.rvTopApps.layoutManager = LinearLayoutManager(this)
+        binding.rvTopApps.adapter = TopAppsAdapter(topAppItems)
+        
+        Log.d(TAG, "Screen time UI updated: $formattedTime, $appCount apps, $unlocks unlocks")
     }
 }

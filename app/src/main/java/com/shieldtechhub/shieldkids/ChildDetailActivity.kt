@@ -3,6 +3,7 @@ package com.shieldtechhub.shieldkids
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -19,7 +20,10 @@ import com.shieldtechhub.shieldkids.common.utils.ImageLoader
 import com.shieldtechhub.shieldkids.databinding.ActivityChildDetailBinding
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
+import com.shieldtechhub.shieldkids.features.screen_time.ui.ScreenTimeDashboardActivity
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.Calendar
 import java.util.Date
 class ChildDetailActivity : AppCompatActivity() {
@@ -27,6 +31,7 @@ class ChildDetailActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var screenTimeCollector: ScreenTimeCollector
     private lateinit var appInventoryManager: AppInventoryManager
+    private lateinit var screenTimeService: ScreenTimeService
     private var devicesListener: ListenerRegistration? = null
 
     private var childId: String = ""
@@ -42,6 +47,7 @@ class ChildDetailActivity : AppCompatActivity() {
         // Initialize services
         screenTimeCollector = ScreenTimeCollector.getInstance(this)
         appInventoryManager = AppInventoryManager(this)
+        screenTimeService = ScreenTimeService.getInstance(this)
 
         // Get intent data
         childId = intent.getStringExtra("childId") ?: ""
@@ -74,8 +80,8 @@ class ChildDetailActivity : AppCompatActivity() {
         // Set profile image
         ImageLoader.loadInto(this, binding.ivChildAvatar, profileImageUri, R.drawable.kidprofile)
         
-        // Set default time limit
-        binding.tvTimeLimit.text = "2 hrs 21 min"
+        // Set loading state for screen time
+        binding.tvTimeLimit.text = "Loading..."
     }
 
     private fun setupClickListeners() {
@@ -95,10 +101,7 @@ class ChildDetailActivity : AppCompatActivity() {
         }
 
         binding.btnScreenTime.setOnClickListener {
-            val intent = Intent(this, AppListActivity::class.java)
-            intent.putExtra("childId", childId)
-            intent.putExtra("childName", childName)
-            startActivity(intent)
+            Toast.makeText(this, "Select a device to view screen time", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnHistory.setOnClickListener {
@@ -206,6 +209,21 @@ class ChildDetailActivity : AppCompatActivity() {
         container.addView(messageView)
     }
 
+    private suspend fun getChildDevices(): HashMap<String, Any> {
+        return try {
+            // Use the existing Firebase sync method to get devices
+            val snapshot = db.collection("children").document(childId).collection("devices").get().await()
+            val devices = hashMapOf<String, Any>()
+            snapshot.documents.forEach { doc ->
+                devices[doc.id] = doc.data ?: emptyMap<String, Any>()
+            }
+            devices
+        } catch (e: Exception) {
+            Log.e("ChildDetailActivity", "Failed to get child devices", e)
+            hashMapOf<String, Any>()
+        }
+    }
+
     private fun addDeviceIcon(container: LinearLayout, deviceId: String, deviceName: String, deviceType: String) {
         val deviceView = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -222,12 +240,8 @@ class ChildDetailActivity : AppCompatActivity() {
             background = ContextCompat.getDrawable(this@ChildDetailActivity, android.R.drawable.list_selector_background)
             
             setOnClickListener {
-                // Navigate to device settings screen
-                val intent = Intent(this@ChildDetailActivity, DeviceSettingsActivity::class.java)
-                intent.putExtra("deviceId", deviceId)
-                intent.putExtra("deviceName", deviceName)
-                intent.putExtra("childId", childId)
-                startActivity(intent)
+                // Show options dialog for device actions
+                showDeviceOptionsDialog(deviceId, deviceName)
             }
         }
 
@@ -282,23 +296,69 @@ class ChildDetailActivity : AppCompatActivity() {
     private fun loadScreenTimeData() {
         lifecycleScope.launch {
             try {
-                val todayUsage = screenTimeCollector.collectDailyUsageData()
-                val totalMinutes = todayUsage.totalScreenTimeMs / (1000 * 60)
-                val hours = totalMinutes / 60
-                val minutes = totalMinutes % 60
+                Log.d("ChildDetailActivity", "Loading aggregated screen time data for child: $childId")
                 
-                binding.tvTimeLimit.text = if (hours > 0) {
-                    "${hours} hrs ${minutes} min"
+                // Get child devices first
+                val devices = getChildDevices()
+                if (devices.isEmpty()) {
+                    Log.d("ChildDetailActivity", "No devices found for child: $childId")
+                    binding.tvTimeLimit.text = "No devices"
+                    return@launch
+                }
+                
+                // Calculate total screen time across all devices
+                val today = Date()
+                var totalScreenTimeMs = 0L
+                var devicesWithData = 0
+                
+                devices.keys.forEach { deviceId ->
+                    try {
+                        val deviceUsageData = screenTimeService.getDailyUsageFromFirebase(today, childId, deviceId)
+                        if (deviceUsageData != null) {
+                            val deviceScreenTime = deviceUsageData["totalScreenTimeMs"] as? Long ?: 0L
+                            totalScreenTimeMs += deviceScreenTime
+                            if (deviceScreenTime > 0) devicesWithData++
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ChildDetailActivity", "Error loading data for device $deviceId", e)
+                    }
+                }
+                
+                if (totalScreenTimeMs > 0) {
+                    val totalMinutes = totalScreenTimeMs / (1000 * 60)
+                    val hours = totalMinutes / 60
+                    val minutes = totalMinutes % 60
+                    
+                    binding.tvTimeLimit.text = if (hours > 0) {
+                        "${hours}h ${minutes}m"
+                    } else if (minutes > 0) {
+                        "${minutes}m"
+                    } else {
+                        "<1m"
+                    }
+                    
+                    Log.d("ChildDetailActivity", "Loaded aggregated screen time: ${binding.tvTimeLimit.text} across $devicesWithData devices")
                 } else {
-                    "${minutes} min"
+                    Log.d("ChildDetailActivity", "No screen time data found across ${devices.size} devices")
+                    binding.tvTimeLimit.text = "No data today"
                 }
                 
             } catch (e: Exception) {
-                binding.tvTimeLimit.text = "2 hrs 21 min" // Default fallback
+                Log.e("ChildDetailActivity", "Failed to load aggregated screen time data", e)
+                binding.tvTimeLimit.text = "Error loading"
             }
         }
     }
     
+    private fun showDeviceOptionsDialog(deviceId: String, deviceName: String) {
+        // Navigate directly to device settings which now includes screen time
+        val intent = Intent(this, DeviceSettingsActivity::class.java)
+        intent.putExtra("deviceId", deviceId)
+        intent.putExtra("deviceName", deviceName)
+        intent.putExtra("childId", childId)
+        startActivity(intent)
+    }
+
     private fun showDeleteChildConfirmation() {
         AlertDialog.Builder(this)
             .setTitle("Delete Child Account")

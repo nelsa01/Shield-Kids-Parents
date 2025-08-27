@@ -16,21 +16,31 @@ import com.shieldtechhub.shieldkids.databinding.ActivityAllAppsBinding
 import com.shieldtechhub.shieldkids.features.app_management.adapters.AllAppsAdapter
 import com.shieldtechhub.shieldkids.features.app_management.service.AppCategory
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInfo
+import com.shieldtechhub.shieldkids.features.app_management.model.AppWithUsage
+import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.Date
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class AllAppsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAllAppsBinding
     private lateinit var adapter: AllAppsAdapter
     private val db = FirebaseFirestore.getInstance()
+    private lateinit var screenTimeService: ScreenTimeService
     
     private var deviceId: String = ""
     private var childId: String = ""
-    private var allApps: List<AppInfo> = emptyList()
-    private var filteredApps: List<AppInfo> = emptyList()
+    private var allApps: List<AppWithUsage> = emptyList()
+    private var filteredApps: List<AppWithUsage> = emptyList()
     private var currentFilter = AppFilter.ALL
     private var searchQuery = ""
+    
+    companion object {
+        private const val TAG = "AllAppsActivity"
+    }
 
     enum class AppFilter {
         ALL, USER, SYSTEM, SOCIAL, GAMES, EDUCATIONAL, ENTERTAINMENT, PRODUCTIVITY, COMMUNICATION, BROWSERS, SHOPPING, OTHER
@@ -51,8 +61,11 @@ class AllAppsActivity : AppCompatActivity() {
             return
         }
         
+        // Initialize services
+        screenTimeService = ScreenTimeService.getInstance(this)
+        
         setupUI()
-        loadChildApps()
+        loadChildAppsWithUsage()
     }
     
     private fun setupUI() {
@@ -62,8 +75,8 @@ class AllAppsActivity : AppCompatActivity() {
         supportActionBar?.title = "Manage Apps"
         
         // Setup RecyclerView
-        adapter = AllAppsAdapter { appInfo ->
-            onAppClicked(appInfo)
+        adapter = AllAppsAdapter { appWithUsage ->
+            onAppClicked(appWithUsage)
         }
         
         binding.recyclerViewAllApps.layoutManager = LinearLayoutManager(this)
@@ -89,7 +102,7 @@ class AllAppsActivity : AppCompatActivity() {
 
         // Setup refresh
         binding.swipeRefreshLayout.setOnRefreshListener {
-            loadChildApps()
+            loadChildAppsWithUsage()
         }
         
         // Setup empty state
@@ -149,7 +162,7 @@ class AllAppsActivity : AppCompatActivity() {
         }
     }
     
-    private fun loadChildApps() {
+    private fun loadChildAppsWithUsage() {
         lifecycleScope.launch {
             try {
                 showLoading(true)
@@ -206,7 +219,7 @@ class AllAppsActivity : AppCompatActivity() {
                     Log.d("AllAppsActivity", "Apps data size: ${appsData?.size ?: 0}")
                     
                     if (appsData != null) {
-                        allApps = appsData.mapNotNull { appData ->
+                        val appsList = appsData.mapNotNull { appData ->
                             try {
                                 AppInfo(
                                     packageName = appData["packageName"] as? String ?: "",
@@ -231,11 +244,15 @@ class AllAppsActivity : AppCompatActivity() {
                             }
                         }
                         
+                        // Load usage data and combine with app inventory
+                        Log.d(TAG, "Loading usage data for ${appsList.size} apps...")
+                        val appsWithUsage = combineAppsWithUsageData(appsList)
+                        
                         // Sort apps alphabetically
-                        allApps = allApps.sortedBy { it.name.lowercase() }
+                        allApps = appsWithUsage.sortedBy { it.appInfo.name.lowercase() }
                         filteredApps = allApps
                         
-                        Log.i("AllAppsActivity", "Loaded ${allApps.size} apps from child device")
+                        Log.i("AllAppsActivity", "Loaded ${allApps.size} apps from child device (${allApps.count { it.hasUsageData }} with usage data)")
                         
                         updateUI()
                         updateStats()
@@ -268,19 +285,21 @@ class AllAppsActivity : AppCompatActivity() {
             showEmptyState(true)
         } else {
             showEmptyState(false)
-            adapter.updateApps(filteredApps)
+            adapter.updateAppsWithUsage(filteredApps)
             
             // Update subtitle
-            val userApps = filteredApps.count { !it.isSystemApp }
+            val userApps = filteredApps.count { !it.appInfo.isSystemApp }
             val systemApps = filteredApps.size - userApps
-            supportActionBar?.subtitle = "${filteredApps.size} apps ($userApps user, $systemApps system)"
+            val appsWithUsage = filteredApps.count { it.hasUsageData }
+            supportActionBar?.subtitle = "${filteredApps.size} apps ($userApps user, $systemApps system, $appsWithUsage with usage)"
         }
         
         updateResultsCount(filteredApps.size)
     }
     
     private fun filterApps() {
-        val filtered = allApps.filter { app ->
+        val filtered = allApps.filter { appWithUsage ->
+            val app = appWithUsage.appInfo
             val matchesFilter = when (currentFilter) {
                 AppFilter.ALL -> true
                 AppFilter.USER -> !app.isSystemApp
@@ -305,18 +324,19 @@ class AllAppsActivity : AppCompatActivity() {
             }
 
             matchesFilter && matchesSearch
-        }.sortedBy { it.name.lowercase() }
+        }.sortedBy { it.appInfo.name.lowercase() }
 
         filteredApps = filtered
         updateUI()
     }
     
     private fun updateStats() {
-        val userApps = allApps.count { !it.isSystemApp }
-        val systemApps = allApps.count { it.isSystemApp }
+        val userApps = allApps.count { !it.appInfo.isSystemApp }
+        val systemApps = allApps.count { it.appInfo.isSystemApp }
+        val appsWithUsage = allApps.count { it.hasUsageData }
         
         binding.tvStatsTitle.text = "Child's App Statistics"
-        binding.tvStats.text = "Total: ${allApps.size} • User: $userApps • System: $systemApps"
+        binding.tvStats.text = "Total: ${allApps.size} • User: $userApps • System: $systemApps • Usage: $appsWithUsage"
     }
 
     private fun updateResultsCount(count: Int) {
@@ -343,8 +363,10 @@ class AllAppsActivity : AppCompatActivity() {
         binding.recyclerViewAllApps.visibility = if (show) android.view.View.GONE else android.view.View.VISIBLE
     }
     
-    private fun onAppClicked(appInfo: AppInfo) {
-        // Show app management dialog with detailed options
+    private fun onAppClicked(appWithUsage: AppWithUsage) {
+        val appInfo = appWithUsage.appInfo
+        
+        // Show app management dialog with detailed options including screen time
         val message = buildString {
             appendLine("App: ${appInfo.name}")
             appendLine("Package: ${appInfo.packageName}")
@@ -352,6 +374,27 @@ class AllAppsActivity : AppCompatActivity() {
             appendLine("Category: ${appInfo.category.name.lowercase().replaceFirstChar { it.uppercase() }}")
             appendLine("Type: ${if (appInfo.isSystemApp) "System App" else "User App"}")
             appendLine("Status: ${if (appInfo.isEnabled) "Enabled" else "Disabled"}")
+            
+            // Add screen time information if available
+            if (appWithUsage.hasUsageData && appWithUsage.usageTimeMs > 0) {
+                appendLine()
+                appendLine("📱 Screen Time Today:")
+                appendLine("Usage: ${appWithUsage.getFormattedUsageTime()}")
+                
+                // Add usage intensity indicator
+                val intensityText = when {
+                    appWithUsage.usageTimeMs >= 2 * 60 * 60 * 1000 -> "Heavy usage"
+                    appWithUsage.usageTimeMs >= 30 * 60 * 1000 -> "Moderate usage" 
+                    appWithUsage.usageTimeMs >= 5 * 60 * 1000 -> "Light usage"
+                    else -> "Minimal usage"
+                }
+                appendLine("Level: $intensityText")
+            } else {
+                appendLine()
+                appendLine("📱 Screen Time: No usage today")
+            }
+            
+            appendLine()
             appendLine("Permissions: ${appInfo.permissions.size}")
         }
         
@@ -408,7 +451,8 @@ class AllAppsActivity : AppCompatActivity() {
         filteredApps = if (query.isEmpty()) {
             allApps
         } else {
-            allApps.filter { app ->
+            allApps.filter { appWithUsage ->
+                val app = appWithUsage.appInfo
                 app.name.contains(query, ignoreCase = true) ||
                 app.packageName.contains(query, ignoreCase = true) ||
                 app.category.name.contains(query, ignoreCase = true)
@@ -444,7 +488,7 @@ class AllAppsActivity : AppCompatActivity() {
                 true
             }
             R.id.action_refresh -> {
-                loadChildApps()
+                loadChildAppsWithUsage()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -488,6 +532,53 @@ class AllAppsActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("AllAppsActivity", "Firebase debug failed", e)
             }
+        }
+    }
+    
+    /**
+     * Combines app inventory data with usage statistics from screen time data
+     */
+    private suspend fun combineAppsWithUsageData(apps: List<AppInfo>): List<AppWithUsage> {
+        try {
+            val today = Date()
+            val usageData = screenTimeService.getDailyUsageFromFirebase(today, childId, deviceId)
+            
+            if (usageData == null) {
+                Log.d(TAG, "No screen time data found for today")
+                return apps.map { AppWithUsage(it) }
+            }
+            
+            // Extract app usage data from Firebase
+            val allAppsData = usageData["allAppsData"] as? List<Map<String, Any>> ?: emptyList()
+            val usageMap = allAppsData.associateBy { it["packageName"] as? String ?: "" }
+            
+            Log.d(TAG, "Found usage data for ${usageMap.size} apps")
+            
+            // Combine app info with usage data
+            return apps.map { appInfo ->
+                val usageInfo = usageMap[appInfo.packageName]
+                
+                if (usageInfo != null) {
+                    val totalTimeMs = usageInfo["totalTimeMs"] as? Long ?: 0L
+                    val launchCount = usageInfo["launchCount"] as? Number ?: 0
+                    val lastUsedTime = usageInfo["lastUsedTime"] as? Long ?: 0L
+                    
+                    AppWithUsage(
+                        appInfo = appInfo,
+                        usageTimeMs = totalTimeMs,
+                        launchCount = launchCount.toInt(),
+                        lastUsedTime = lastUsedTime,
+                        hasUsageData = totalTimeMs > 0
+                    )
+                } else {
+                    // No usage data for this app
+                    AppWithUsage(appInfo)
+                }
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to combine apps with usage data", e)
+            return apps.map { AppWithUsage(it) }
         }
     }
 }
