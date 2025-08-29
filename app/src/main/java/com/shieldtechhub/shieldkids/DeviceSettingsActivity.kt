@@ -13,6 +13,8 @@ import com.shieldtechhub.shieldkids.databinding.ActivityDeviceSettingsBinding
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import com.shieldtechhub.shieldkids.adapters.TopAppsAdapter
 import com.shieldtechhub.shieldkids.adapters.TopAppItem
+import com.shieldtechhub.shieldkids.debug.ScreenTimeDebugHelper
+import com.shieldtechhub.shieldkids.debug.DeviceIdDebugHelper
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -54,6 +56,17 @@ class DeviceSettingsActivity : AppCompatActivity() {
         // Set device email (placeholder for now)
         binding.tvDeviceEmail.text = "device@shieldtechclub.com"
         
+        // Add debug functionality - long click on device name for debug
+        binding.tvDeviceName.setOnLongClickListener {
+            Log.d(TAG, "🐛 MANUAL DEBUG TRIGGER - Long click on device name")
+            lifecycleScope.launch {
+                val debugResults = ScreenTimeDebugHelper.debugFirebaseScreenTimeAccess(childId, deviceId)
+                Log.d(TAG, "🐛 MANUAL DEBUG RESULTS:\n$debugResults")
+                Toast.makeText(this@DeviceSettingsActivity, "Debug logged - check LogCat for 'ScreenTimeDebug'", Toast.LENGTH_LONG).show()
+            }
+            true
+        }
+        
         // Set device initials based on device name
         val initials = if (deviceName.length >= 2) {
             deviceName.take(2).uppercase()
@@ -82,7 +95,11 @@ class DeviceSettingsActivity : AppCompatActivity() {
         }
         
         binding.btnDeviceUsage.setOnClickListener {
-            Toast.makeText(this, "Device usage settings coming soon!", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, com.shieldtechhub.shieldkids.features.screen_time.ui.ScreenTimeReportsActivity::class.java)
+            intent.putExtra("childId", childId)
+            intent.putExtra("deviceId", deviceId)
+            intent.putExtra("deviceName", deviceName)
+            startActivity(intent)
         }
         
         binding.btnLocation.setOnClickListener {
@@ -186,10 +203,20 @@ class DeviceSettingsActivity : AppCompatActivity() {
     private fun loadScreenTimeData() {
         lifecycleScope.launch {
             try {
-                Log.d(TAG, "Loading screen time data for device: $deviceId")
+                Log.d(TAG, "🚀 Starting loadScreenTimeData() debug")
+                Log.d(TAG, "📍 DeviceSettingsActivity - Screen Time Card")
+                
+                // Run comprehensive debug
+                val debugResults = ScreenTimeDebugHelper.debugFirebaseScreenTimeAccess(childId, deviceId)
+                Log.d(TAG, "📋 Debug Results:\n$debugResults")
+                
+                // Also debug device IDs to see actual vs expected
+                val deviceIdDebug = DeviceIdDebugHelper.debugDeviceIds(childId)
+                Log.d(TAG, "🔍 Device ID Debug:\n$deviceIdDebug")
                 
                 val today = Date()
-                val usageData = screenTimeService.getDailyUsageFromFirebase(today, childId, deviceId)
+                // Use the new method that reads from app inventory document
+                val usageData = screenTimeService.getScreenTimeFromAppInventory(childId, deviceId)
                 
                 if (usageData != null) {
                     // Extract data from Firebase response

@@ -227,31 +227,130 @@ class ScreenTimeService(private val context: Context) {
     }
     
     /**
-     * Retrieve daily usage data from Firebase for a specific child and device (for parents)
+     * Ensure device ID has proper format for Firebase queries
      */
-    suspend fun getDailyUsageFromFirebase(date: Date, childId: String, deviceId: String): Map<String, Any>? {
+    private fun normalizeDeviceId(deviceId: String): String {
+        return if (deviceId.startsWith("device_")) {
+            deviceId // Already has prefix
+        } else {
+            "device_$deviceId" // Add prefix
+        }
+    }
+
+    /**
+     * Retrieve screen time data from app inventory document (current system)
+     */
+    suspend fun getScreenTimeFromAppInventory(childId: String, deviceId: String): Map<String, Any>? {
         return try {
-            val documentId = "screen_time_${formatDateKey(date)}"
+            val normalizedDeviceId = normalizeDeviceId(deviceId)
+            Log.d(TAG, "🔍 Retrieving screen time from app inventory:")
+            Log.d(TAG, "   📍 Original device ID: '$deviceId'")
+            Log.d(TAG, "   📍 Normalized device ID: '$normalizedDeviceId'")
+            Log.d(TAG, "   📍 Path: children/$childId/devices/$normalizedDeviceId/data/appInventory")
             
             val snapshot = db.collection(COLLECTION_CHILDREN)
                 .document(childId)
                 .collection(COLLECTION_DEVICES)
-                .document(deviceId)
+                .document(normalizedDeviceId)
+                .collection(COLLECTION_DATA)
+                .document("appInventory")
+                .get()
+                .await()
+            
+            if (snapshot.exists()) {
+                val data = snapshot.data
+                val screenTimeData = data?.get("screenTime") as? Map<String, Any>
+                val todayData = screenTimeData?.get("today") as? Map<String, Any>
+                
+                if (todayData != null) {
+                    Log.d(TAG, "✅ Found screen time data in app inventory")
+                    Log.d(TAG, "   🕐 Total screen time: ${todayData["totalScreenTimeMs"]} ms")
+                    Log.d(TAG, "   📱 Screen unlocks: ${todayData["screenUnlocks"]}")
+                    Log.d(TAG, "   📄 Top apps: ${(todayData["topApps"] as? List<*>)?.size}")
+                    todayData
+                } else {
+                    Log.w(TAG, "❌ No screen time data found in app inventory")
+                    null
+                }
+            } else {
+                Log.w(TAG, "❌ App inventory document not found")
+                null
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "💥 Failed to retrieve screen time from app inventory", e)
+            null
+        }
+    }
+
+    /**
+     * Retrieve daily usage data from Firebase for a specific child and device (for parents)
+     */
+    suspend fun getDailyUsageFromFirebase(date: Date, childId: String, deviceId: String): Map<String, Any>? {
+        val normalizedDeviceId = normalizeDeviceId(deviceId)
+        return try {
+            val documentId = "screen_time_${formatDateKey(date)}"
+            val fullPath = "children/$childId/devices/$normalizedDeviceId/data/$documentId"
+            
+            Log.d(TAG, "🔍 Attempting to retrieve screen time data from Firebase:")
+            Log.d(TAG, "   📍 Original device ID: '$deviceId'")
+            Log.d(TAG, "   📍 Normalized device ID: '$normalizedDeviceId'")
+            Log.d(TAG, "   📍 Full path: $fullPath")
+            Log.d(TAG, "   📅 Date: ${formatDateKey(date)}")
+            Log.d(TAG, "   👶 Child ID: $childId")
+            
+            val snapshot = db.collection(COLLECTION_CHILDREN)
+                .document(childId)
+                .collection(COLLECTION_DEVICES)
+                .document(normalizedDeviceId)
                 .collection(COLLECTION_DATA)
                 .document(documentId)
                 .get()
                 .await()
             
             if (snapshot.exists()) {
-                Log.d(TAG, "Retrieved daily usage data from Firebase for child $childId, device $deviceId: ${formatDateKey(date)}")
-                snapshot.data
+                val data = snapshot.data
+                Log.d(TAG, "✅ Successfully retrieved screen time data from Firebase")
+                Log.d(TAG, "   📊 Data keys: ${data?.keys}")
+                Log.d(TAG, "   🕐 Total screen time: ${data?.get("totalScreenTimeMs")} ms")
+                Log.d(TAG, "   📱 Screen unlocks: ${data?.get("screenUnlocks")}")
+                Log.d(TAG, "   📲 App count: ${data?.get("appCount")}")
+                data
             } else {
-                Log.d(TAG, "No daily usage data found in Firebase for child $childId, device $deviceId: ${formatDateKey(date)}")
+                Log.w(TAG, "❌ No screen time document found at path: $fullPath")
+                
+                // Let's also check if the device document exists
+                val deviceSnapshot = db.collection(COLLECTION_CHILDREN)
+                    .document(childId)
+                    .collection(COLLECTION_DEVICES)
+                    .document(normalizedDeviceId)
+                    .get()
+                    .await()
+                    
+                if (deviceSnapshot.exists()) {
+                    Log.w(TAG, "📱 Device document exists, but no screen time data for today")
+                    
+                    // List all data documents to see what's available
+                    val dataCollectionSnapshot = db.collection(COLLECTION_CHILDREN)
+                        .document(childId)
+                        .collection(COLLECTION_DEVICES)
+                        .document(normalizedDeviceId)
+                        .collection(COLLECTION_DATA)
+                        .get()
+                        .await()
+                        
+                    val availableDocs = dataCollectionSnapshot.documents.map { it.id }
+                    Log.w(TAG, "📄 Available data documents: $availableDocs")
+                } else {
+                    Log.w(TAG, "❌ Device document does not exist at: children/$childId/devices/$normalizedDeviceId")
+                }
+                
                 null
             }
             
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to retrieve daily usage data from Firebase for child $childId", e)
+            Log.e(TAG, "💥 Failed to retrieve screen time data from Firebase", e)
+            Log.e(TAG, "   📍 Attempted path: children/$childId/devices/$normalizedDeviceId/data/screen_time_${formatDateKey(date)}")
             null
         }
     }

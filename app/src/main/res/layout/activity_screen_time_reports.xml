@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/gray_100">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="@color/white"
+        android:elevation="2dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Back"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            app:tint="@color/gray_900" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp">
+
+            <TextView
+                android:id="@+id/toolbarTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Screen Time Reports"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray_900" />
+
+            <TextView
+                android:id="@+id/toolbarSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Device Name"
+                android:textSize="12sp"
+                android:textColor="@color/gray_600" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Time Period Tabs -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:background="@color/white"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btnToday"
+            style="@style/TabButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="Today"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btnWeek"
+            style="@style/TabButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="Week"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btnMonth"
+            style="@style/TabButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="Month" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <!-- Content -->
+        <ScrollView
+            android:id="@+id/layoutContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Period Indicator -->
+                <TextView
+                    android:id="@+id/tvPeriodIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Today • Aug 29, 2025"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_600"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Summary Stats Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Summary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/gray_900"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvTotalTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No Data"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/gray_400" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Total Time"
+                                android:textSize="12sp"
+                                android:textColor="@color/gray_600" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvScreenUnlocks"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No Data"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/gray_400" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Screen Unlocks"
+                                android:textSize="12sp"
+                                android:textColor="@color/gray_600" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvAppsUsed"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No Data"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/gray_400" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Apps Used"
+                                android:textSize="12sp"
+                                android:textColor="@color/gray_600" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Top Apps Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Most Used Apps"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/gray_900"
+                        android:layout_marginBottom="12dp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerTopApps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
+                <!-- Category Usage Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Usage by Category"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/gray_900"
+                        android:layout_marginBottom="12dp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerCategoryUsage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </ScrollView>
+
+        <!-- Empty State -->
+        <LinearLayout
+            android:id="@+id/layoutEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:visibility="gone">
+
+
+            <TextView
+                android:id="@+id/tvEmptyMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No screen time data available"
+                android:textSize="16sp"
+                android:textColor="@color/gray_600"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

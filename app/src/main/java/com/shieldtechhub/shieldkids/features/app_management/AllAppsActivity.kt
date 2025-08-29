@@ -541,16 +541,17 @@ class AllAppsActivity : AppCompatActivity() {
     private suspend fun combineAppsWithUsageData(apps: List<AppInfo>): List<AppWithUsage> {
         try {
             val today = Date()
-            val usageData = screenTimeService.getDailyUsageFromFirebase(today, childId, deviceId)
+            // Use the new method that reads from app inventory document
+            val usageData = screenTimeService.getScreenTimeFromAppInventory(childId, deviceId)
             
             if (usageData == null) {
                 Log.d(TAG, "No screen time data found for today")
                 return apps.map { AppWithUsage(it) }
             }
             
-            // Extract app usage data from Firebase
-            val allAppsData = usageData["allAppsData"] as? List<Map<String, Any>> ?: emptyList()
-            val usageMap = allAppsData.associateBy { it["packageName"] as? String ?: "" }
+            // Extract app usage data from Firebase - use topApps since allAppsData isn't in app inventory format
+            val topAppsData = usageData["topApps"] as? List<Map<String, Any>> ?: emptyList()
+            val usageMap = topAppsData.associateBy { it["packageName"] as? String ?: "" }
             
             Log.d(TAG, "Found usage data for ${usageMap.size} apps")
             

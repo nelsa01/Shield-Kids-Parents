@@ -186,6 +186,12 @@
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
+        <!-- Screen Time Reports Activity - For parent-side screen time reports -->
+        <activity 
+            android:name=".features.screen_time.ui.ScreenTimeReportsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
+            
         <!-- Unified Sync Debug Activity - For debugging unified 5-minute sync -->
         <activity 
             android:name=".common.sync.UnifiedSyncDebugActivity"

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="12dp"
+    android:background="?android:attr/selectableItemBackground">
+
+    <!-- Rank Badge -->
+    <TextView
+        android:id="@+id/tvRank"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:text="#1"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:gravity="center"
+        android:background="@drawable/circle_background"
+        android:layout_marginEnd="12dp" />
+
+    <!-- App Icon -->
+    <ImageView
+        android:id="@+id/ivAppIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_apps"
+        android:layout_marginEnd="12dp" />
+
+    <!-- App Info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Instagram"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/gray_900" />
+
+        <TextView
+            android:id="@+id/tvCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Social"
+            android:textSize="12sp"
+            android:textColor="@color/gray_600" />
+
+    </LinearLayout>
+
+    <!-- Usage Stats -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/tvUsageTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1h 23m"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/gray_900" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvLaunches"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="24 opens"
+                android:textSize="10sp"
+                android:textColor="@color/gray_600"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/tvIntensity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Heavy"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="@color/red_600" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
