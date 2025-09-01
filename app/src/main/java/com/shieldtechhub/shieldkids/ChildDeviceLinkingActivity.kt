@@ -175,33 +175,72 @@ class ChildDeviceLinkingActivity : AppCompatActivity() {
             "deviceName" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         )
 
-        // Add this device to the child's devices collection
+        // Add this device to the child's devices collection (field for parent compatibility)
         db.collection("children").document(childId)
             .update("devices.$deviceId", deviceInfo)
             .addOnSuccessListener {
-                // Clear the reference number hash to prevent reuse
-                clearReferenceNumber(childId) {
-                    // Set this device as child device locally
-                    deviceStateManager.setAsChildDevice(
-                        childId = childId,
-                        childName = childName,
-                        parentId = parentId,
-                        parentEmail = parentEmail
-                    )
-                    
-                    showLoading(false)
-                    showSuccess("Device linked successfully!")
-                    
-                    // Navigate to child mode
-                    val intent = Intent(this, ChildModeActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    finish()
+                // Also create device document in subcollection for child data storage
+                createDeviceSubcollectionDocument(childId, deviceId, deviceInfo) {
+                    // Clear the reference number hash to prevent reuse
+                    clearReferenceNumber(childId) {
+                        // Set this device as child device locally
+                        deviceStateManager.setAsChildDevice(
+                            childId = childId,
+                            childName = childName,
+                            parentId = parentId,
+                            parentEmail = parentEmail
+                        )
+                        
+                        showLoading(false)
+                        showSuccess("Device linked successfully!")
+                        
+                        // Navigate to child mode
+                        val intent = Intent(this, ChildModeActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                        finish()
+                    }
                 }
             }
             .addOnFailureListener { exception ->
                 showLoading(false)
                 showError("Failed to register device: ${exception.localizedMessage}")
+            }
+    }
+
+    /**
+     * Create device document in subcollection for child-side data storage
+     */
+    private fun createDeviceSubcollectionDocument(childId: String, deviceId: String, deviceInfo: Map<String, Any>, onComplete: () -> Unit) {
+        val deviceDocId = "device_$deviceId"
+        
+        // Create device document in subcollection with basic info
+        val deviceDocData = mapOf(
+            "deviceId" to deviceId,
+            "deviceModel" to deviceInfo["deviceModel"],
+            "androidVersion" to deviceInfo["androidVersion"],
+            "deviceName" to deviceInfo["deviceName"],
+            "linkTimestamp" to deviceInfo["linkTimestamp"],
+            "status" to "active",
+            "lastAppSyncTime" to null,
+            "lastPolicyUpdateTime" to null,
+            "appSyncStatus" to "PENDING",
+            "createdAt" to System.currentTimeMillis()
+        )
+        
+        db.collection("children")
+            .document(childId)
+            .collection("devices")
+            .document(deviceDocId)
+            .set(deviceDocData)
+            .addOnSuccessListener {
+                android.util.Log.i("ChildDeviceLinking", "Created device subcollection document: $deviceDocId")
+                onComplete()
+            }
+            .addOnFailureListener { exception ->
+                android.util.Log.e("ChildDeviceLinking", "Failed to create device subcollection document", exception)
+                // Continue anyway - the main device field was created successfully
+                onComplete()
             }
     }
 
@@ -233,6 +272,7 @@ class ChildDeviceLinkingActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (!isLinking) {
             super.onBackPressed()

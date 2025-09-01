@@ -23,6 +23,15 @@ data class DevicePolicy(
     val weekdayScreenTime: Long = 0,  // Minutes per day
     val weekendScreenTime: Long = 0,  // Minutes per day
     
+    // Enhanced screen time controls
+    val breakReminders: Boolean = false, // Enable break reminders
+    val breakInterval: Long = 60, // Minutes between break reminders
+    val breakDuration: Long = 15, // Minutes for each break
+    val usageWarnings: Boolean = true, // Show "X minutes remaining" warnings
+    val warningThresholds: List<Int> = listOf(30, 15, 5), // Warning at 30, 15, 5 minutes remaining
+    val gracePeriod: Long = 5, // Extra minutes allowed when time is up
+    val weeklyScreenTime: Long = 0, // Total minutes per week (0 = no weekly limit)
+    
     // App-specific policies
     val appPolicies: List<AppPolicy> = emptyList(),
     
@@ -59,6 +68,13 @@ data class DevicePolicy(
             put("bedtimeEnd", bedtimeEnd)
             put("weekdayScreenTime", weekdayScreenTime)
             put("weekendScreenTime", weekendScreenTime)
+            put("breakReminders", breakReminders)
+            put("breakInterval", breakInterval)
+            put("breakDuration", breakDuration)
+            put("usageWarnings", usageWarnings)
+            put("warningThresholds", JSONArray(warningThresholds))
+            put("gracePeriod", gracePeriod)
+            put("weeklyScreenTime", weeklyScreenTime)
             put("emergencyMode", emergencyMode)
             put("parentPin", parentPin)
             
@@ -130,6 +146,17 @@ data class DevicePolicy(
                 }
             }
             
+            // Parse warning thresholds
+            val warningThresholds = mutableListOf<Int>()
+            if (json.has("warningThresholds")) {
+                val thresholdsArray = json.getJSONArray("warningThresholds")
+                for (i in 0 until thresholdsArray.length()) {
+                    warningThresholds.add(thresholdsArray.getInt(i))
+                }
+            } else {
+                warningThresholds.addAll(listOf(30, 15, 5)) // Default thresholds
+            }
+            
             return DevicePolicy(
                 id = json.getString("id"),
                 name = json.getString("name"),
@@ -145,6 +172,13 @@ data class DevicePolicy(
                 bedtimeEnd = json.optString("bedtimeEnd").takeIf { it.isNotEmpty() },
                 weekdayScreenTime = json.optLong("weekdayScreenTime", 0),
                 weekendScreenTime = json.optLong("weekendScreenTime", 0),
+                breakReminders = json.optBoolean("breakReminders", false),
+                breakInterval = json.optLong("breakInterval", 60),
+                breakDuration = json.optLong("breakDuration", 15),
+                usageWarnings = json.optBoolean("usageWarnings", true),
+                warningThresholds = warningThresholds,
+                gracePeriod = json.optLong("gracePeriod", 5),
+                weeklyScreenTime = json.optLong("weeklyScreenTime", 0),
                 appPolicies = appPolicies,
                 blockedCategories = blockedCategories,
                 emergencyMode = json.optBoolean("emergencyMode", false),

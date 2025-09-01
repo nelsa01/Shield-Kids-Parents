@@ -11,7 +11,6 @@ import com.shieldtechhub.shieldkids.databinding.ActivityAppManagementBinding
 import com.shieldtechhub.shieldkids.features.app_management.service.AppCategory
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInfo
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInventoryManager
-import com.shieldtechhub.shieldkids.features.app_management.ui.SyncStatusWidget
 import com.shieldtechhub.shieldkids.features.policy.PolicyEnforcementManager
 import com.shieldtechhub.shieldkids.features.policy.PolicySyncManager
 import com.shieldtechhub.shieldkids.features.policy.model.AppPolicy
@@ -31,7 +30,6 @@ class AppManagementActivity : AppCompatActivity() {
     private var childId: String = ""
     private var devicePolicy: DevicePolicy? = null
     private var childApps: List<AppInfo> = emptyList() // Child's apps from Firebase
-    private lateinit var syncStatusWidget: SyncStatusWidget
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,13 +66,6 @@ class AppManagementActivity : AppCompatActivity() {
             finish()
         }
         
-        // Configure sync status widget
-        syncStatusWidget = binding.syncStatusWidget
-        syncStatusWidget.configure(childId, deviceId) {
-            // Handle manual sync request
-            Toast.makeText(this, "Requesting manual sync from child device...", Toast.LENGTH_SHORT).show()
-            // TODO: Implement manual sync trigger mechanism
-        }
         
         // App monitoring toggle
         binding.switchAppMonitoring.setOnCheckedChangeListener { _, isChecked ->
@@ -84,6 +75,14 @@ class AppManagementActivity : AppCompatActivity() {
         // Age restrictions section
         binding.layoutAgeRestrictions.setOnClickListener {
             Toast.makeText(this, "Age restrictions configuration coming soon!", Toast.LENGTH_SHORT).show()
+        }
+        
+        // Screen Time Limits section
+        binding.layoutScreenTime.setOnClickListener {
+            val intent = Intent(this, DeviceScreenTimeActivity::class.java)
+            intent.putExtra("deviceId", deviceId)
+            intent.putExtra("childId", childId)
+            startActivity(intent)
         }
         
         // Apps exclusions section
@@ -128,7 +127,13 @@ class AppManagementActivity : AppCompatActivity() {
             try {
                 // Load current device policy
                 val activePolicies = policyManager.activePolicies.value
-                devicePolicy = activePolicies[deviceId]
+                Log.d("AppManagement", "🔍 Policy lookup - deviceId: '$deviceId'")
+                Log.d("AppManagement", "🔍 Available policy keys: ${activePolicies.keys}")
+                
+                // Try both formats for device ID lookup
+                devicePolicy = activePolicies[deviceId] ?: activePolicies["device_$deviceId"]
+                
+                Log.d("AppManagement", "🔍 Found policy: ${devicePolicy != null}")
                 
                 // Update UI with current policy state
                 updateUIWithPolicy(devicePolicy)
@@ -142,10 +147,43 @@ class AppManagementActivity : AppCompatActivity() {
         }
     }
     
+    private fun updateScreenTimeStatus() {
+        val policy = devicePolicy
+        val status = if (policy != null) {
+            val weekdayHours = policy.weekdayScreenTime / 60
+            val weekendHours = policy.weekendScreenTime / 60
+            
+            val weekdayText = if (policy.weekdayScreenTime == 0L) "No limit" else "${weekdayHours}h"
+            val weekendText = if (policy.weekendScreenTime == 0L) "No limit" else "${weekendHours}h"
+            
+            when {
+                policy.weekdayScreenTime > 0 && policy.weekendScreenTime > 0 -> 
+                    "$weekdayText weekday, $weekendText weekend"
+                policy.weekdayScreenTime > 0 -> "Weekdays: $weekdayText"
+                policy.weekendScreenTime > 0 -> "Weekends: $weekendText"
+                policy.bedtimeStart != null -> "Bedtime: ${policy.bedtimeStart}-${policy.bedtimeEnd}"
+                else -> "No limits set"
+            }
+        } else {
+            "Not configured"
+        }
+        
+        binding.tvScreenTimeStatus.text = status
+    }
+
     private fun updateUIWithPolicy(policy: DevicePolicy?) {
+        Log.d("AppManagement", "📱 updateUIWithPolicy - policy exists: ${policy != null}")
+        
+        // Update screen time status
+        updateScreenTimeStatus()
+        
+        // Temporarily remove listener to prevent unwanted toast messages
+        binding.switchAppMonitoring.setOnCheckedChangeListener(null)
+        
         if (policy != null) {
             // App monitoring is enabled if we have any app policies
             val hasAppPolicies = policy.appPolicies.isNotEmpty()
+            Log.d("AppManagement", "📱 Policy found with ${policy.appPolicies.size} app policies, monitoring enabled: $hasAppPolicies")
             binding.switchAppMonitoring.isChecked = hasAppPolicies
             
             // Update exclusions count
@@ -153,8 +191,14 @@ class AppManagementActivity : AppCompatActivity() {
             binding.tvAppExclusionsCount.text = excludedApps.toString()
         } else {
             // Default state - monitoring off, no exclusions
+            Log.d("AppManagement", "📱 No policy found, setting monitoring switch to OFF")
             binding.switchAppMonitoring.isChecked = false
             binding.tvAppExclusionsCount.text = "0"
+        }
+        
+        // Restore listener after UI update
+        binding.switchAppMonitoring.setOnCheckedChangeListener { _, isChecked ->
+            updateAppMonitoring(isChecked)
         }
     }
     
@@ -221,7 +265,7 @@ class AppManagementActivity : AppCompatActivity() {
                 Log.d("AppManagement", "=== END DEBUG ===")
                 
                 // Use simplified device ID format: device_{deviceId} (no timestamp)
-                val expectedDeviceDocId = "device_$deviceId"
+                val expectedDeviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
                 
                 val appInventoryRef = db.collection("children")
                     .document(childId)
@@ -395,6 +439,7 @@ class AppManagementActivity : AppCompatActivity() {
     }
     
     private fun updateAppMonitoring(enabled: Boolean) {
+        Log.d("AppManagement", "🔄 updateAppMonitoring called with enabled=$enabled")
         lifecycleScope.launch {
             try {
                 if (enabled) {
@@ -445,9 +490,18 @@ class AppManagementActivity : AppCompatActivity() {
     private fun checkDeviceAdminStatus() {
         val deviceAdminManager = com.shieldtechhub.shieldkids.common.utils.DeviceAdminManager(this)
         if (!deviceAdminManager.isDeviceAdminActive()) {
+            // Temporarily remove listener to prevent unwanted toast
+            val currentListener = binding.switchAppMonitoring.hasOnClickListeners()
+            binding.switchAppMonitoring.setOnCheckedChangeListener(null)
+            
             // Disable app monitoring switch if device admin is not active
             binding.switchAppMonitoring.isEnabled = false
             binding.switchAppMonitoring.isChecked = false
+            
+            // Restore listener if it was set
+            binding.switchAppMonitoring.setOnCheckedChangeListener { _, isChecked ->
+                updateAppMonitoring(isChecked)
+            }
             
             // Show status text
             binding.tvDeviceAdminStatus.visibility = android.view.View.VISIBLE

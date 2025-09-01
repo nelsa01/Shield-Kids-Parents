@@ -427,7 +427,13 @@ class PolicyEnforcementManager(private val context: Context) {
             val appInfo = packageManager.getApplicationInfo(context.packageName, 0)
             if ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0) {
                 // App is not system app - could be vulnerable to uninstallation
-                Log.w(TAG, "App is not system app - policy enforcement may be circumvented")
+                Log.w(TAG, "⚠️ Security Warning: Shield Kids is not installed as a system app")
+                Log.w(TAG, "This may allow the child to uninstall the app and bypass parental controls")
+                Log.w(TAG, "For maximum security, consider installing as a system app or using device management")
+                
+                // Report this security concern to parent
+                reportViolation("system", ViolationType.POLICY_TAMPERING, 
+                    "Shield Kids not installed as system app - may be vulnerable to uninstallation")
             }
             
             true
@@ -468,5 +474,90 @@ class PolicyEnforcementManager(private val context: Context) {
         editor.apply()
         
         _activePolicies.value = emptyMap()
+    }
+    
+    // Device-level screen time enforcement
+    
+    /**
+     * Check if device is in bedtime
+     */
+    fun isInBedtime(): Boolean {
+        return activePolicies.value.values.any { policy ->
+            policy.isWithinBedtime()
+        }
+    }
+    
+    /**
+     * Check if daily screen time limit is exceeded
+     */
+    fun isDailyScreenTimeLimitExceeded(): Boolean {
+        val policy = activePolicies.value.values.firstOrNull() ?: return false
+        val dailyLimit = policy.getDailyScreenTimeLimit()
+        
+        if (dailyLimit <= 0) return false // No limit set
+        
+        val todayUsage = getTodayScreenTime()
+        return todayUsage >= dailyLimit * 60 * 1000 // Convert minutes to milliseconds
+    }
+    
+    /**
+     * Check if weekly screen time limit is exceeded
+     */
+    fun isWeeklyScreenTimeLimitExceeded(): Boolean {
+        val policy = activePolicies.value.values.firstOrNull() ?: return false
+        val weeklyLimit = policy.weeklyScreenTime
+        
+        if (weeklyLimit <= 0) return false // No limit set
+        
+        val weekUsage = getWeekScreenTime()
+        return weekUsage >= weeklyLimit * 60 * 1000 // Convert minutes to milliseconds
+    }
+    
+    /**
+     * Get remaining screen time for today in minutes
+     */
+    fun getRemainingScreenTime(): Long {
+        val policy = activePolicies.value.values.firstOrNull() ?: return Long.MAX_VALUE
+        val dailyLimit = policy.getDailyScreenTimeLimit()
+        
+        if (dailyLimit <= 0) return Long.MAX_VALUE // No limit
+        
+        val todayUsage = getTodayScreenTime() / (60 * 1000) // Convert to minutes
+        return maxOf(0, dailyLimit - todayUsage)
+    }
+    
+    /**
+     * Check if device usage should be blocked
+     */
+    fun isDeviceBlocked(): Boolean {
+        return isInBedtime() || isDailyScreenTimeLimitExceeded() || isWeeklyScreenTimeLimitExceeded()
+    }
+    
+    /**
+     * Get current daily usage in milliseconds
+     */
+    private fun getTodayScreenTime(): Long {
+        // This would integrate with ScreenTimeCollector
+        // For now, return 0 - this needs proper implementation
+        return 0L
+    }
+    
+    /**
+     * Get current weekly usage in milliseconds
+     */
+    private fun getWeekScreenTime(): Long {
+        // This would integrate with ScreenTimeCollector
+        // For now, return 0 - this needs proper implementation
+        return 0L
+    }
+    
+    /**
+     * Show device block notification to user
+     */
+    fun showDeviceBlockedNotification(reason: String) {
+        val intent = Intent("com.shieldtechhub.shieldkids.DEVICE_BLOCKED")
+        intent.putExtra("reason", reason)
+        intent.putExtra("timestamp", System.currentTimeMillis())
+        context.sendBroadcast(intent)
     }
 }

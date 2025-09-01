@@ -280,11 +280,12 @@ class ChildAppSyncService(private val context: Context) {
             // Update progress
             updateSyncStatus(currentSyncStatus.withProgress(apps.size * 3 / 4)) // 75% progress
             
-            // Upload to Firebase
+            // Upload to Firebase using device document ID - ensure device_ prefix
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
             val docRef = db.collection("children")
                 .document(childId)
                 .collection("devices")
-                .document(deviceId)
+                .document(deviceDocId)
                 .collection("data")
                 .document("appInventory")
             
@@ -333,10 +334,11 @@ class ChildAppSyncService(private val context: Context) {
      */
     private suspend fun updateLastSyncTimestamp(childId: String, deviceId: String, syncStatus: SyncStatus) {
         try {
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
             val deviceRef = db.collection("children")
                 .document(childId)
                 .collection("devices")
-                .document(deviceId)
+                .document(deviceDocId)
             
             deviceRef.update(
                 mapOf(

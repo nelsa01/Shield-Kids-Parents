@@ -90,6 +90,9 @@ class ChildModeActivity : AppCompatActivity() {
         
         // Load app statistics
         loadAppStats()
+        
+        // Load current policy limits
+        loadPolicyLimits()
     }
 
     private fun loadScreenTimeInfo() {
@@ -139,6 +142,254 @@ class ChildModeActivity : AppCompatActivity() {
                 binding.tvUserApps.text = ""
                 binding.tvBlockedApps.text = ""
             }
+        }
+    }
+    
+    private fun loadPolicyLimits() {
+        val childInfo = deviceStateManager.getChildDeviceInfo()
+        if (childInfo == null) {
+            android.util.Log.w("ChildModeActivity", "No child device info found")
+            showNoLimitsState()
+            return
+        }
+        
+        android.util.Log.i("ChildModeActivity", "Loading policy limits for device: ${childInfo.deviceId}")
+        android.util.Log.d("ChildModeActivity", "Child info - childId: ${childInfo.childId}, parentEmail: ${childInfo.parentEmail}")
+        
+        lifecycleScope.launch {
+            try {
+                // Fetch current policy from Firebase
+                val policy = policySyncManager.fetchCurrentPolicy(childInfo.deviceId)
+                
+                android.util.Log.i("ChildModeActivity", "Fetched policy: ${policy?.name ?: "null"}")
+                
+                if (policy != null) {
+                    android.util.Log.d("ChildModeActivity", "Policy details - Weekday: ${policy.weekdayScreenTime}, Weekend: ${policy.weekendScreenTime}, Weekly: ${policy.weeklyScreenTime}")
+                    android.util.Log.d("ChildModeActivity", "Bedtime: ${policy.bedtimeStart} - ${policy.bedtimeEnd}")
+                    android.util.Log.d("ChildModeActivity", "Break reminders: ${policy.breakReminders}, interval: ${policy.breakInterval}")
+                    android.util.Log.d("ChildModeActivity", "Blocked categories: ${policy.blockedCategories}")
+                    android.util.Log.d("ChildModeActivity", "App policies: ${policy.appPolicies.size}")
+                    displayPolicyLimits(policy)
+                } else {
+                    android.util.Log.w("ChildModeActivity", "No policy found for device")
+                    // Also try to check Firebase directly to debug the issue
+                    checkFirebasePolicyDirectly(childInfo.deviceId)
+                    showNoLimitsState()
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("ChildModeActivity", "Failed to load policy limits", e)
+                showNoLimitsState()
+            }
+        }
+    }
+    
+    private fun checkFirebasePolicyDirectly(deviceId: String) {
+        // Direct Firebase check to debug policy storage
+        lifecycleScope.launch {
+            try {
+                android.util.Log.d("ChildModeActivity", "Checking Firebase directly for device: $deviceId")
+                
+                db.collection("policies").document(deviceId).get()
+                    .addOnSuccessListener { document ->
+                        if (document.exists()) {
+                            android.util.Log.i("ChildModeActivity", "Policy document exists in Firebase")
+                            val data = document.data
+                            android.util.Log.d("ChildModeActivity", "Policy data keys: ${data?.keys}")
+                            android.util.Log.d("ChildModeActivity", "Policy JSON: ${data?.get("policy")}")
+                            android.util.Log.d("ChildModeActivity", "Policy status: ${data?.get("status")}")
+                        } else {
+                            android.util.Log.w("ChildModeActivity", "Policy document does not exist in Firebase for device: $deviceId")
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        android.util.Log.e("ChildModeActivity", "Failed to check Firebase policy directly", e)
+                    }
+                    
+            } catch (e: Exception) {
+                android.util.Log.e("ChildModeActivity", "Error in direct Firebase check", e)
+            }
+        }
+    }
+    
+    private fun displayPolicyLimits(policy: com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy) {
+        android.util.Log.i("ChildModeActivity", "Displaying policy limits")
+        var hasAnyLimits = false
+        
+        // Hide no limits state initially
+        binding.layoutNoLimits.visibility = android.view.View.GONE
+        
+        // Display screen time limits
+        val hasScreenTimeLimits = displayScreenTimeLimits(policy)
+        android.util.Log.d("ChildModeActivity", "Has screen time limits: $hasScreenTimeLimits")
+        if (hasScreenTimeLimits) hasAnyLimits = true
+        
+        // Display bedtime limits  
+        val hasBedtimeLimits = displayBedtimeLimits(policy)
+        android.util.Log.d("ChildModeActivity", "Has bedtime limits: $hasBedtimeLimits")
+        if (hasBedtimeLimits) hasAnyLimits = true
+        
+        // Display break reminders
+        val hasBreakReminders = displayBreakReminders(policy)
+        android.util.Log.d("ChildModeActivity", "Has break reminders: $hasBreakReminders")
+        if (hasBreakReminders) hasAnyLimits = true
+        
+        // Display app restrictions
+        val hasAppRestrictions = displayAppRestrictions(policy)
+        android.util.Log.d("ChildModeActivity", "Has app restrictions: $hasAppRestrictions")
+        if (hasAppRestrictions) hasAnyLimits = true
+        
+        android.util.Log.i("ChildModeActivity", "Total limits found: hasAnyLimits = $hasAnyLimits")
+        
+        // If no limits found, show no limits state
+        if (!hasAnyLimits) {
+            android.util.Log.w("ChildModeActivity", "No limits detected, showing no limits state")
+            showNoLimitsState()
+        }
+    }
+    
+    private fun displayScreenTimeLimits(policy: com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy): Boolean {
+        android.util.Log.d("ChildModeActivity", "Processing screen time limits - Weekday: ${policy.weekdayScreenTime}, Weekend: ${policy.weekendScreenTime}, Weekly: ${policy.weeklyScreenTime}")
+        
+        var hasLimits = false
+        
+        // Reset visibility of all limit TextViews
+        binding.tvWeekdayLimit.visibility = android.view.View.GONE
+        binding.tvWeekendLimit.visibility = android.view.View.GONE
+        binding.tvWeeklyLimit.visibility = android.view.View.GONE
+        
+        // Show weekday limit if set
+        if (policy.weekdayScreenTime > 0) {
+            val weekdayText = "Weekdays: ${formatTimeLimit(policy.weekdayScreenTime.toInt())}"
+            binding.tvWeekdayLimit.text = weekdayText
+            binding.tvWeekdayLimit.visibility = android.view.View.VISIBLE
+            android.util.Log.d("ChildModeActivity", "Set weekday limit: $weekdayText")
+            hasLimits = true
+        } else {
+            android.util.Log.d("ChildModeActivity", "No weekday limit (value: ${policy.weekdayScreenTime})")
+        }
+        
+        // Show weekend limit if set
+        if (policy.weekendScreenTime > 0) {
+            val weekendText = "Weekends: ${formatTimeLimit(policy.weekendScreenTime.toInt())}"
+            binding.tvWeekendLimit.text = weekendText
+            binding.tvWeekendLimit.visibility = android.view.View.VISIBLE
+            android.util.Log.d("ChildModeActivity", "Set weekend limit: $weekendText")
+            hasLimits = true
+        } else {
+            android.util.Log.d("ChildModeActivity", "No weekend limit (value: ${policy.weekendScreenTime})")
+        }
+        
+        // Show weekly limit if enabled and set
+        if (policy.weeklyScreenTime > 0) {
+            val weeklyText = "Weekly: ${formatTimeLimit(policy.weeklyScreenTime.toInt())}"
+            binding.tvWeeklyLimit.text = weeklyText
+            binding.tvWeeklyLimit.visibility = android.view.View.VISIBLE
+            android.util.Log.d("ChildModeActivity", "Set weekly limit: $weeklyText")
+            hasLimits = true
+        } else {
+            android.util.Log.d("ChildModeActivity", "No weekly limit (value: ${policy.weeklyScreenTime})")
+        }
+        
+        // Show or hide the screen time limits section
+        binding.layoutScreenTimeLimits.visibility = if (hasLimits) android.view.View.VISIBLE else android.view.View.GONE
+        android.util.Log.d("ChildModeActivity", "Screen time limits section visibility: ${if (hasLimits) "VISIBLE" else "GONE"}")
+        
+        return hasLimits
+    }
+    
+    private fun displayBedtimeLimits(policy: com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy): Boolean {
+        val hasBedtime = policy.bedtimeStart != null && policy.bedtimeEnd != null
+        
+        if (hasBedtime) {
+            val startTime = formatTime(policy.bedtimeStart!!)
+            val endTime = formatTime(policy.bedtimeEnd!!)
+            binding.tvBedtimeSchedule.text = "$startTime - $endTime"
+            binding.layoutBedtimeLimits.visibility = android.view.View.VISIBLE
+            return true
+        }
+        
+        binding.layoutBedtimeLimits.visibility = android.view.View.GONE
+        return false
+    }
+    
+    private fun displayBreakReminders(policy: com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy): Boolean {
+        val hasBreakReminders = policy.breakReminders == true && policy.breakInterval != null && policy.breakInterval!! > 0
+        
+        if (hasBreakReminders) {
+            binding.tvBreakSchedule.text = "Every ${policy.breakInterval} minutes"
+            binding.layoutBreakReminders.visibility = android.view.View.VISIBLE
+            return true
+        }
+        
+        binding.layoutBreakReminders.visibility = android.view.View.GONE
+        return false
+    }
+    
+    private fun displayAppRestrictions(policy: com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy): Boolean {
+        // Count blocked categories and app policies
+        val blockedCategoriesCount = policy.blockedCategories.size
+        val appPoliciesCount = policy.appPolicies.size
+        
+        if (blockedCategoriesCount > 0 || appPoliciesCount > 0) {
+            val summaryText = when {
+                blockedCategoriesCount > 0 && appPoliciesCount > 0 -> {
+                    "$blockedCategoriesCount categories blocked, $appPoliciesCount apps restricted"
+                }
+                blockedCategoriesCount > 0 -> {
+                    if (blockedCategoriesCount == 1) "1 app category blocked" else "$blockedCategoriesCount app categories blocked"
+                }
+                appPoliciesCount > 0 -> {
+                    if (appPoliciesCount == 1) "1 app restricted" else "$appPoliciesCount apps restricted"
+                }
+                else -> "App restrictions active"
+            }
+            
+            binding.tvAppRestrictionsSummary.text = summaryText
+            binding.layoutAppRestrictions.visibility = android.view.View.VISIBLE
+            return true
+        }
+        
+        binding.layoutAppRestrictions.visibility = android.view.View.GONE
+        return false
+    }
+    
+    private fun showNoLimitsState() {
+        binding.layoutNoLimits.visibility = android.view.View.VISIBLE
+        binding.layoutScreenTimeLimits.visibility = android.view.View.GONE
+        binding.layoutBedtimeLimits.visibility = android.view.View.GONE
+        binding.layoutBreakReminders.visibility = android.view.View.GONE
+        binding.layoutAppRestrictions.visibility = android.view.View.GONE
+    }
+    
+    private fun formatTimeLimit(minutes: Int): String {
+        val hours = minutes / 60
+        val remainingMinutes = minutes % 60
+        
+        return when {
+            hours == 0 -> "${remainingMinutes}m"
+            remainingMinutes == 0 -> "${hours}h"
+            else -> "${hours}h ${remainingMinutes}m"
+        }
+    }
+    
+    private fun formatTime(hourMinute: String): String {
+        // Assume format is "HH:mm"
+        return try {
+            val parts = hourMinute.split(":")
+            val hour = parts[0].toInt()
+            val minute = parts[1].toInt()
+            
+            val amPm = if (hour >= 12) "PM" else "AM"
+            val displayHour = when {
+                hour == 0 -> 12
+                hour > 12 -> hour - 12
+                else -> hour
+            }
+            
+            "${displayHour}:${minute.toString().padStart(2, '0')} $amPm"
+        } catch (e: Exception) {
+            hourMinute // Return original if parsing fails
         }
     }
 

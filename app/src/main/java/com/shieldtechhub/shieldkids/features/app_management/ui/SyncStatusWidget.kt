@@ -65,6 +65,17 @@ class SyncStatusWidget @JvmOverloads constructor(
     }
     
     /**
+     * Normalize device ID to ensure it has the device_ prefix
+     */
+    private fun normalizeDeviceId(deviceId: String): String {
+        return if (deviceId.startsWith("device_")) {
+            deviceId // Already has prefix
+        } else {
+            "device_$deviceId" // Add prefix
+        }
+    }
+    
+    /**
      * Configure the widget for specific child and device
      */
     fun configure(childId: String, deviceId: String, onManualSyncRequested: (() -> Unit)? = null) {
@@ -127,10 +138,16 @@ class SyncStatusWidget @JvmOverloads constructor(
         // Stop previous listener
         syncStatusListener?.remove()
         
+        // Normalize device ID to ensure it has the device_ prefix
+        val normalizedDeviceId = normalizeDeviceId(deviceId)
+        
+        android.util.Log.d("SyncStatusWidget", "Starting listener for path: children/$childId/devices/$normalizedDeviceId/data/appInventory")
+        android.util.Log.d("SyncStatusWidget", "Original deviceId: '$deviceId', normalized: '$normalizedDeviceId'")
+        
         val appInventoryRef = db.collection("children")
             .document(childId)
             .collection("devices")
-            .document(deviceId)
+            .document(normalizedDeviceId)
             .collection("data")
             .document("appInventory")
         
@@ -142,17 +159,25 @@ class SyncStatusWidget @JvmOverloads constructor(
             }
             
             if (snapshot?.exists() == true) {
+                android.util.Log.d("SyncStatusWidget", "✅ AppInventory document found with keys: ${snapshot.data?.keys}")
+                
                 widgetScope.launch {
                     try {
                         // Extract sync status from document
                         val syncStatusData = snapshot.get("syncStatus") as? Map<String, Any>
                         val fingerprintData = snapshot.get("inventoryFingerprint") as? Map<String, Any>
                         val summaryData = snapshot.get("summary") as? Map<String, Any>
+                        val lastSyncTime = snapshot.getLong("lastSyncTime") ?: 0L
                         
-                        // Update sync status
+                        android.util.Log.d("SyncStatusWidget", "Data found - syncStatus: ${syncStatusData != null}, summary: ${summaryData != null}, lastSync: $lastSyncTime")
+                        
+                        // Update sync status - create success status from available data
                         if (syncStatusData != null) {
                             val syncStatus = SyncStatus.fromFirebaseMap(syncStatusData)
                             currentSyncStatus = syncStatus
+                        } else if (lastSyncTime > 0) {
+                            // Create basic success status from timestamp
+                            currentSyncStatus = SyncStatus.successful(lastSyncTime)
                         }
                         
                         // Update fingerprint
@@ -164,15 +189,19 @@ class SyncStatusWidget @JvmOverloads constructor(
                         if (summaryData != null) {
                             val totalApps = (summaryData["totalApps"] as? Number)?.toInt() ?: 0
                             currentSyncStatus = currentSyncStatus.copy(totalAppsCount = totalApps)
+                            android.util.Log.d("SyncStatusWidget", "Found $totalApps total apps in summary")
                         }
                         
                         updateUI()
                         
                     } catch (e: Exception) {
-                        // Handle parsing error
+                        android.util.Log.e("SyncStatusWidget", "Error parsing document data", e)
                         updateSyncStatus(currentSyncStatus.withSyncFailure("Data parsing error: ${e.message}"))
                     }
                 }
+            } else {
+                android.util.Log.w("SyncStatusWidget", "❌ AppInventory document does not exist at expected path")
+                updateSyncStatus(currentSyncStatus.withSyncFailure("No app inventory data found. Child device may not be synced."))
             }
         }
     }

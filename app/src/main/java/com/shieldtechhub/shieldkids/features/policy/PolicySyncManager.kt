@@ -62,11 +62,27 @@ class PolicySyncManager(private val context: Context) {
                 .await()
             
             // 2. Save to child's device collection for backup
-            db.collection("children")
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
+            
+            // First ensure the device document exists
+            val deviceDocRef = db.collection("children")
                 .document(childId)
                 .collection("devices")
-                .document(deviceId)
-                .collection("data")
+                .document(deviceDocId)
+            
+            // Create or update the main device document with basic info
+            val deviceData = mapOf(
+                "deviceId" to deviceId.removePrefix("device_"),
+                "lastUpdated" to System.currentTimeMillis(),
+                "status" to "active",
+                "policyApplied" to true
+            )
+            
+            deviceDocRef.set(deviceData, com.google.firebase.firestore.SetOptions.merge()).await()
+            Log.d(TAG, "Created/updated device document: $deviceDocId")
+            
+            // Then save the policy in the subcollection
+            deviceDocRef.collection("data")
                 .document("policy")
                 .set(policyData)
                 .await()
@@ -292,10 +308,11 @@ class PolicySyncManager(private val context: Context) {
                 .await()
             
             // Delete from child's device collection
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
             db.collection("children")
                 .document(childId)
                 .collection("devices")
-                .document(deviceId)
+                .document(deviceDocId)
                 .collection("data")
                 .document("policy")
                 .delete()

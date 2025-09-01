@@ -161,6 +161,11 @@
             android:name=".CategoryPolicyActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
+            
+        <activity 
+            android:name=".DeviceScreenTimeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
         
         <!-- Policy Test Activity - Only for testing/debug builds -->
         <activity 

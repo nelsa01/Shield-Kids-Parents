@@ -193,6 +193,16 @@ data class SyncStatus(
             syncId = java.util.UUID.randomUUID().toString(),
             status = SyncState.IDLE
         )
+        
+        /**
+         * Create successful sync status from timestamp
+         */
+        fun successful(timestamp: Long): SyncStatus = SyncStatus(
+            syncId = java.util.UUID.randomUUID().toString(),
+            status = SyncState.SUCCESS,
+            lastSuccessfulSyncTime = timestamp,
+            lastSyncCompleteTime = timestamp
+        )
     }
 }
 
