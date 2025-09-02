@@ -1,33 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white"
+    android:background="@drawable/card_background"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:layout_marginHorizontal="8dp"
-    android:layout_marginVertical="2dp"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
     android:foreground="?android:attr/selectableItemBackground"
     android:clickable="true"
-    android:focusable="true">
-
-    <!-- Category Color Indicator -->
-    <View
-        android:id="@+id/viewCategoryIndicator"
-        android:layout_width="4dp"
-        android:layout_height="match_parent"
-        android:background="@color/teal_500"
-        android:layout_marginEnd="12dp" />
-
-    <!-- App Icon -->
-    <ImageView
-        android:id="@+id/ivAppIcon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/ic_apps"
-        android:tint="@color/gray_600"
-        android:layout_marginEnd="12dp"
-        android:layout_gravity="center_vertical" />
+    android:focusable="true"
+    android:elevation="2dp">
 
     <!-- App Info -->
     <LinearLayout
@@ -37,90 +21,38 @@
         android:orientation="vertical"
         android:layout_gravity="center_vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/tvAppName"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="App Name"
-                android:textSize="16sp"
-                android:textColor="@color/black"
-                android:textStyle="normal"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/tvAppType"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="User"
-                android:textSize="10sp"
-                android:textColor="@color/white"
-                android:background="@drawable/badge_background_green"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:layout_marginStart="8dp" />
-
-        </LinearLayout>
-
         <TextView
-            android:id="@+id/tvPackageName"
+            android:id="@+id/tvAppName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="com.example.app"
-            android:textSize="12sp"
-            android:textColor="@color/gray_600"
-            android:layout_marginTop="2dp"
+            android:text="App Name"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:textStyle="normal"
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Screen Time Display -->
+        <TextView
+            android:id="@+id/tvUsageTime"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="4dp">
-
-            <TextView
-                android:id="@+id/tvAppVersion"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="v1.0"
-                android:textSize="11sp"
-                android:textColor="@color/gray_500"
-                android:layout_marginEnd="8dp" />
-
-            <TextView
-                android:id="@+id/tvAppCategory"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Category"
-                android:textSize="11sp"
-                android:textColor="@color/teal_600"
-                android:textStyle="normal" />
-
-            <!-- Usage Time -->
-            <TextView
-                android:id="@+id/tvUsageTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="45m"
-                android:textSize="12sp"
-                android:textColor="@color/orange_600"
-                android:textStyle="bold"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/rounded_background_light"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:visibility="gone" />
-
-        </LinearLayout>
+            android:text="2h 01m"
+            android:textSize="14sp"
+            android:textColor="@color/gray_600"
+            android:layout_marginTop="4dp" />
 
     </LinearLayout>
+
+    <!-- Toggle Switch for Blocking -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchBlockApp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="16dp"
+        app:thumbTint="@color/white"
+        app:trackTint="@color/teal_500"
+        app:trackTintMode="src_atop" />
 
 </LinearLayout>

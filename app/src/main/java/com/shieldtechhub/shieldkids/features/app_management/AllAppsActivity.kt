@@ -75,9 +75,14 @@ class AllAppsActivity : AppCompatActivity() {
         supportActionBar?.title = "Manage Apps"
         
         // Setup RecyclerView
-        adapter = AllAppsAdapter { appWithUsage ->
-            onAppClicked(appWithUsage)
-        }
+        adapter = AllAppsAdapter(
+            onAppClick = { appWithUsage ->
+                onAppClicked(appWithUsage)
+            },
+            onToggleBlock = { appWithUsage, isBlocked ->
+                onAppBlockToggled(appWithUsage, isBlocked)
+            }
+        )
         
         binding.recyclerViewAllApps.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewAllApps.adapter = adapter
@@ -255,7 +260,6 @@ class AllAppsActivity : AppCompatActivity() {
                         Log.i("AllAppsActivity", "Loaded ${allApps.size} apps from child device (${allApps.count { it.hasUsageData }} with usage data)")
                         
                         updateUI()
-                        updateStats()
                         
                     } else {
                         Log.w("AllAppsActivity", "No apps data found in Firebase")
@@ -330,14 +334,7 @@ class AllAppsActivity : AppCompatActivity() {
         updateUI()
     }
     
-    private fun updateStats() {
-        val userApps = allApps.count { !it.appInfo.isSystemApp }
-        val systemApps = allApps.count { it.appInfo.isSystemApp }
-        val appsWithUsage = allApps.count { it.hasUsageData }
-        
-        binding.tvStatsTitle.text = "Child's App Statistics"
-        binding.tvStats.text = "Total: ${allApps.size} • User: $userApps • System: $systemApps • Usage: $appsWithUsage"
-    }
+
 
     private fun updateResultsCount(count: Int) {
         binding.tvResultsCount.text = "$count apps found"
@@ -409,6 +406,30 @@ class AllAppsActivity : AppCompatActivity() {
                 showPermissions(appInfo)
             }
             .show()
+    }
+    
+    private fun onAppBlockToggled(appWithUsage: AppWithUsage, isBlocked: Boolean) {
+        val appInfo = appWithUsage.appInfo
+        
+        // Handle app blocking toggle
+        val action = if (isBlocked) "blocked" else "unblocked"
+        Toast.makeText(this, "${appInfo.name} has been $action", Toast.LENGTH_SHORT).show()
+        
+        // TODO: Implement actual app blocking logic here
+        // This would typically involve:
+        // 1. Updating the app's blocked status in Firebase
+        // 2. Sending blocking policy to the child device
+        // 3. Updating the local app list
+        
+        // For now, just update the local state
+        val updatedAppInfo = appInfo.copy(isBlocked = isBlocked)
+        val updatedAppWithUsage = appWithUsage.copy(appInfo = updatedAppInfo)
+        
+        val appIndex = allApps.indexOfFirst { it.appInfo.packageName == appInfo.packageName }
+        if (appIndex != -1) {
+            allApps = allApps.toMutableList().apply { set(appIndex, updatedAppWithUsage) }
+            filterApps("") // Refresh the filtered list
+        }
     }
     
     private fun showBlockConfirmation(appInfo: AppInfo) {

@@ -54,9 +54,14 @@ class AllAppsActivity : AppCompatActivity() {
         supportActionBar?.title = "Manage Apps"
         
         // Setup RecyclerView
-        adapter = AllAppsAdapter { appInfo ->
-            onAppClicked(appInfo)
-        }
+        adapter = AllAppsAdapter(
+            onAppClick = { appInfo ->
+                onAppClicked(appInfo)
+            },
+            onToggleBlock = { appInfo, isBlocked ->
+                onAppBlockToggled(appInfo, isBlocked)
+            }
+        )
         
         binding.recyclerViewAllApps.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewAllApps.adapter = adapter
@@ -102,7 +107,8 @@ class AllAppsActivity : AppCompatActivity() {
                                     targetSdkVersion = (appData["targetSdkVersion"] as? Number)?.toInt() ?: 1,
                                     permissions = (appData["permissions"] as? List<String>) ?: emptyList(),
                                     icon = null, // No icon from Firebase
-                                    dataDir = "" // No dataDir from Firebase
+                                    dataDir = "", // No dataDir from Firebase
+                                    isBlocked = appData["isBlocked"] as? Boolean ?: false
                                 )
                             } catch (e: Exception) {
                                 Log.w("AllAppsActivity", "Failed to parse app data: $appData", e)
@@ -184,6 +190,26 @@ class AllAppsActivity : AppCompatActivity() {
                 Toast.makeText(this, "App blocking coming soon", Toast.LENGTH_SHORT).show()
             }
             .show()
+    }
+    
+    private fun onAppBlockToggled(appInfo: AppInfo, isBlocked: Boolean) {
+        // Handle app blocking toggle
+        val action = if (isBlocked) "blocked" else "unblocked"
+        Toast.makeText(this, "${appInfo.name} has been $action", Toast.LENGTH_SHORT).show()
+        
+        // TODO: Implement actual app blocking logic here
+        // This would typically involve:
+        // 1. Updating the app's blocked status in Firebase
+        // 2. Sending blocking policy to the child device
+        // 3. Updating the local app list
+        
+        // For now, just update the local state
+        val updatedApp = appInfo.copy(isBlocked = isBlocked)
+        val appIndex = allApps.indexOfFirst { it.packageName == appInfo.packageName }
+        if (appIndex != -1) {
+            allApps = allApps.toMutableList().apply { set(appIndex, updatedApp) }
+            filterApps("") // Refresh the filtered list
+        }
     }
     
     private fun filterApps(query: String) {

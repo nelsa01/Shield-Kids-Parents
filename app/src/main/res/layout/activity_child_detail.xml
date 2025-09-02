@@ -203,7 +203,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_requests"
+                        android:src="@drawable/requests"
                         android:layout_marginBottom="8dp"
                         app:tint="@color/teal_500" />
 
@@ -231,14 +231,14 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_screen_time"
+                        android:src="@drawable/timerstart"
                         android:layout_marginBottom="8dp"
                         app:tint="@color/teal_500" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Select Device"
+                        android:text="Screen Time"
                         android:textSize="14sp"
                         android:textColor="@color/gray_700" />
 
@@ -259,7 +259,7 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_history"
+                        android:src="@drawable/book1"
                         android:layout_marginBottom="8dp"
                         app:tint="@color/teal_500" />
 

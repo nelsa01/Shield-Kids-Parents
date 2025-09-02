@@ -17,57 +17,6 @@
         app:title="Manage Apps"
         app:titleTextColor="@color/white" />
 
-    <!-- Stats Section with Sync Button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <!-- Header Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="4dp">
-
-            <TextView
-                android:id="@+id/tvStatsTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Child's App Statistics"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/black" />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvStats"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Loading..."
-            android:textSize="14sp"
-            android:textColor="@color/gray_600" />
-
-        <!-- Management Info -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tap any app to manage blocking settings"
-            android:textSize="12sp"
-            android:textColor="@color/text_secondary"
-            android:layout_marginTop="4dp"
-            android:drawableStart="@drawable/ic_info"
-            android:drawablePadding="4dp"
-            android:drawableTint="@color/text_secondary"
-            android:gravity="center_vertical" />
-
-    </LinearLayout>
-
     <!-- Search Bar -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -75,7 +24,7 @@
         android:background="@color/white"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingBottom="16dp">
+        android:paddingVertical="16dp">
 
         <androidx.appcompat.widget.SearchView
             android:id="@+id/searchView"
@@ -266,6 +215,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
+                android:paddingTop="8dp"
                 android:paddingBottom="8dp" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

@@ -111,7 +111,8 @@ class AppInventoryManager(private val context: Context) {
             permissions = getAppPermissions(packageInfo),
             isEnabled = applicationInfo.enabled,
             targetSdkVersion = applicationInfo.targetSdkVersion,
-            dataDir = applicationInfo.dataDir ?: ""
+            dataDir = applicationInfo.dataDir ?: "",
+            isBlocked = false // Default to false for new apps
         )
     }
     
@@ -235,7 +236,8 @@ data class AppInfo(
     val permissions: List<String>,
     val isEnabled: Boolean,
     val targetSdkVersion: Int,
-    val dataDir: String
+    val dataDir: String,
+    val isBlocked: Boolean = false
 )
 
 enum class AppCategory {
