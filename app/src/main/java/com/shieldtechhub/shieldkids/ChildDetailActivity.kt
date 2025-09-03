@@ -247,7 +247,7 @@ class ChildDetailActivity : AppCompatActivity() {
 
         // Device icon
         val deviceIcon = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(64, 64).apply {
+            layoutParams = LinearLayout.LayoutParams(128, 128).apply {
                 bottomMargin = 8
             }
             background = ContextCompat.getDrawable(this@ChildDetailActivity, R.drawable.circle_device_bg)

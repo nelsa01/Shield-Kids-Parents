@@ -6,7 +6,9 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
+import com.shieldtechhub.shieldkids.common.utils.DeviceRegistrationManager
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
+import com.shieldtechhub.shieldkids.ShieldKidsApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +37,7 @@ class ChildAppSyncService(private val context: Context) {
     private val db = FirebaseFirestore.getInstance()
     private val appInventoryManager = AppInventoryManager(context)
     private val deviceStateManager = DeviceStateManager(context)
+    private val deviceRegistrationManager = DeviceRegistrationManager.getInstance(context)
     private val screenTimeCollector = ScreenTimeCollector.getInstance(context)
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     
@@ -172,6 +175,21 @@ class ChildAppSyncService(private val context: Context) {
         val syncId = UUID.randomUUID().toString()
         try {
             Log.d(TAG, "Starting app inventory and screen time sync for child: $childId, device: $deviceId")
+            
+            // Check Firebase initialization
+            val app = ShieldKidsApplication.getInstance()
+            if (app == null || !app.isFirebaseReady()) {
+                updateSyncStatus(currentSyncStatus.withSyncFailure("Firebase not ready"))
+                Log.w(TAG, "Firebase not ready, skipping sync")
+                return
+            }
+            
+            // Ensure device document exists before syncing
+            if (!deviceRegistrationManager.ensureDeviceDocumentExists()) {
+                updateSyncStatus(currentSyncStatus.withSyncFailure("Device not registered"))
+                Log.e(TAG, "Device not registered, cannot sync")
+                return
+            }
             
             // Check network connectivity
             if (!isNetworkAvailable()) {

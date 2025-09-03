@@ -30,7 +30,6 @@ class PolicySyncManager(private val context: Context) {
     
     private val db = FirebaseFirestore.getInstance()
     private val deviceStateManager = DeviceStateManager(context)
-    private val policyEnforcementManager = PolicyEnforcementManager.getInstance(context)
     
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var policyListener: ListenerRegistration? = null
@@ -170,7 +169,8 @@ class PolicySyncManager(private val context: Context) {
                 val policy = DevicePolicy.fromJson(policyJson)
                 
                 // Apply the policy locally
-                val success = policyEnforcementManager.applyDevicePolicy(deviceId, policy)
+                val policyManager = PolicyEnforcementManager.getInstance(context)
+                val success = policyManager.applyDevicePolicy(deviceId, policy)
                 
                 if (success) {
                     Log.i(TAG, "Successfully applied policy update")

@@ -208,13 +208,25 @@ data class AppPolicy(
     }
     
     // Utility functions
+    fun isCurrentlyAllowed(context: android.content.Context): Boolean {
+        if (!isActive) return true
+        
+        return when (action) {
+            Action.ALLOW -> true
+            Action.BLOCK -> false
+            Action.TIME_LIMIT -> isWithinTimeWindow() && !hasExceededTimeLimit(context)
+            Action.SCHEDULE -> isWithinSchedule()
+        }
+    }
+    
+    @Deprecated("Use isCurrentlyAllowed(context) instead")
     fun isCurrentlyAllowed(): Boolean {
         if (!isActive) return true
         
         return when (action) {
             Action.ALLOW -> true
             Action.BLOCK -> false
-            Action.TIME_LIMIT -> isWithinTimeWindow() && !hasExceededTimeLimit()
+            Action.TIME_LIMIT -> isWithinTimeWindow() // Skip time limit check without context
             Action.SCHEDULE -> isWithinSchedule()
         }
     }
@@ -238,10 +250,19 @@ data class AppPolicy(
         }
     }
     
-    private fun hasExceededTimeLimit(): Boolean {
-        // This would need to integrate with usage tracking
-        // For now, return false as placeholder
-        return false
+    private fun hasExceededTimeLimit(context: android.content.Context): Boolean {
+        val timeLimit = this.timeLimit ?: return false
+        
+        try {
+            val screenTimeCollector = com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector.getInstance(context)
+            val currentUsage = screenTimeCollector.getCurrentAppUsage(packageName)
+            val dailyLimitMs = timeLimit.dailyLimitMinutes * 60 * 1000
+            
+            return currentUsage >= dailyLimitMs
+        } catch (e: Exception) {
+            android.util.Log.e("AppPolicy", "Failed to check time limit for $packageName", e)
+            return false
+        }
     }
     
     private fun isWithinSchedule(): Boolean {
@@ -300,19 +321,46 @@ data class AppPolicy(
         }
     }
     
+    fun getRemainingTimeToday(context: android.content.Context): Long {
+        val timeLimit = this.timeLimit ?: return Long.MAX_VALUE
+        
+        try {
+            val screenTimeCollector = com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector.getInstance(context)
+            val currentUsageMs = screenTimeCollector.getCurrentAppUsage(packageName)
+            val dailyLimitMs = timeLimit.dailyLimitMinutes * 60 * 1000
+            
+            val remainingMs = dailyLimitMs - currentUsageMs
+            return if (remainingMs > 0) remainingMs / (60 * 1000) else 0L // Return minutes
+        } catch (e: Exception) {
+            android.util.Log.e("AppPolicy", "Failed to get remaining time for $packageName", e)
+            return timeLimit.dailyLimitMinutes // Fallback to full limit
+        }
+    }
+    
+    @Deprecated("Use getRemainingTimeToday(context) instead")
     fun getRemainingTimeToday(): Long {
-        // This would integrate with usage tracking to calculate remaining time
-        // For now, return time limit as placeholder
+        // Fallback for backward compatibility
         return timeLimit?.dailyLimitMinutes ?: 0L
     }
     
-    fun getWarningTimeRemaining(): Long {
+    fun getWarningTimeRemaining(context: android.content.Context): Long {
         val timeLimit = this.timeLimit ?: return 0L
-        val remaining = getRemainingTimeToday()
+        val remaining = getRemainingTimeToday(context)
         return if (remaining <= timeLimit.warningAtMinutes) remaining else 0L
     }
     
+    fun shouldShowWarning(context: android.content.Context): Boolean {
+        return getWarningTimeRemaining(context) > 0
+    }
+    
+    @Deprecated("Use getWarningTimeRemaining(context) instead")
+    fun getWarningTimeRemaining(): Long {
+        val timeLimit = this.timeLimit ?: return 0L
+        return timeLimit.warningAtMinutes // Fallback
+    }
+    
+    @Deprecated("Use shouldShowWarning(context) instead")
     fun shouldShowWarning(): Boolean {
-        return getWarningTimeRemaining() > 0
+        return false // Fallback
     }
 }

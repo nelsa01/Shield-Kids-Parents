@@ -240,17 +240,23 @@ data class AppInfo(
     val isBlocked: Boolean = false
 )
 
-enum class AppCategory {
-    SOCIAL,
-    GAMES,
-    EDUCATIONAL,
-    ENTERTAINMENT,
-    PRODUCTIVITY,
-    COMMUNICATION,
-    SYSTEM,
-    OTHER,
-    BROWSERS,
-    SHOPPING
+enum class AppCategory(val displayName: String) {
+    SOCIAL("Social Media"),
+    GAMES("Games"),
+    EDUCATIONAL("Educational"),
+    ENTERTAINMENT("Entertainment"),
+    PRODUCTIVITY("Productivity"),
+    COMMUNICATION("Communication"),
+    SYSTEM("System"),
+    OTHER("Other"),
+    BROWSERS("Browsers"),
+    SHOPPING("Shopping"),
+    NEWS("News"),
+    PHOTO_VIDEO("Photo & Video"),
+    MUSIC("Music"),
+    HEALTH("Health & Fitness"),
+    TRAVEL("Travel & Navigation"),
+    FINANCE("Finance")
 }
 
 data class AppInventoryResult(

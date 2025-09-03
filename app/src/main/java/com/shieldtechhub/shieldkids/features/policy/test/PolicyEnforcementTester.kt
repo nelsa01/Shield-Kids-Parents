@@ -72,6 +72,10 @@ class PolicyEnforcementTester(private val context: Context) {
                 // Integration tests
                 testSystemIntegration()
                 
+                // Test our new features
+                testTimeTrackingIntegration()
+                testRealTimePolicySync()
+                
                 // Generate final report
                 generateTestReport()
                 
@@ -634,6 +638,165 @@ class PolicyEnforcementTester(private val context: Context) {
     private fun testNotificationIntegration(): Boolean = true
     private fun testBroadcastIntegration(): Boolean = true
     private fun testServiceIntegration(): Boolean = true
+    
+    /**
+     * Test time tracking integration with app blocking
+     */
+    private suspend fun testTimeTrackingIntegration() {
+        Log.d(TAG, "Testing time tracking integration")
+        
+        val startTime = System.currentTimeMillis()
+        
+        try {
+            // Create policy with time limits
+            val timeLimitPolicy = DevicePolicy(
+                id = "time_test",
+                name = "Time Limit Test",
+                appPolicies = listOf(
+                    AppPolicy.timeLimit(TEST_APP_PACKAGE, 30) // 30 minutes daily limit
+                )
+            )
+            
+            // Apply policy
+            val applyResult = policyProcessor.applyDevicePolicy("time_test", timeLimitPolicy)
+            
+            // Test time limit checking
+            val hasTimeLimit = policyEnforcementManager.hasTimeLimit(TEST_APP_PACKAGE)
+            val timeLimit = policyEnforcementManager.getTimeLimit(TEST_APP_PACKAGE)
+            val remainingTime = policyEnforcementManager.getRemainingTime(TEST_APP_PACKAGE)
+            
+            // Test time limit exceeded check (should be false initially)
+            val timeLimitExceeded = policyEnforcementManager.hasExceededTimeLimit(TEST_APP_PACKAGE)
+            
+            val success = applyResult.success && hasTimeLimit && timeLimit > 0 && !timeLimitExceeded
+            
+            testResults.add(TestResult(
+                testName = "Time Tracking Integration",
+                success = success,
+                details = "Policy applied: ${applyResult.success}, Has limit: $hasTimeLimit, " +
+                         "Limit: ${timeLimit}ms, Remaining: ${remainingTime}ms, Exceeded: $timeLimitExceeded",
+                duration = System.currentTimeMillis() - startTime,
+                category = TestCategory.INTEGRATION
+            ))
+            
+            // Test AppPolicy context-aware methods
+            testAppPolicyTimeTracking()
+            
+        } catch (e: Exception) {
+            testResults.add(TestResult(
+                testName = "Time Tracking Integration", 
+                success = false,
+                details = "Exception: ${e.message}",
+                duration = System.currentTimeMillis() - startTime,
+                category = TestCategory.INTEGRATION
+            ))
+        }
+    }
+    
+    /**
+     * Test AppPolicy context-aware time tracking methods
+     */
+    private fun testAppPolicyTimeTracking() {
+        val startTime = System.currentTimeMillis()
+        
+        try {
+            // Create app policy with time limit
+            val appPolicy = AppPolicy.timeLimit(TEST_APP_PACKAGE, 60) // 60 minutes
+            
+            // Test context-aware methods
+            val isAllowed = appPolicy.isCurrentlyAllowed(context)
+            val remainingTime = appPolicy.getRemainingTimeToday(context)
+            val shouldWarn = appPolicy.shouldShowWarning(context)
+            
+            val success = isAllowed && remainingTime >= 0
+            
+            testResults.add(TestResult(
+                testName = "AppPolicy Time Tracking Methods",
+                success = success,
+                details = "Allowed: $isAllowed, Remaining: ${remainingTime}min, Should warn: $shouldWarn",
+                duration = System.currentTimeMillis() - startTime,
+                category = TestCategory.INTEGRATION
+            ))
+            
+        } catch (e: Exception) {
+            testResults.add(TestResult(
+                testName = "AppPolicy Time Tracking Methods",
+                success = false,
+                details = "Exception: ${e.message}",
+                duration = System.currentTimeMillis() - startTime,
+                category = TestCategory.INTEGRATION
+            ))
+        }
+    }
+    
+    /**
+     * Test real-time policy sync functionality
+     */
+    private suspend fun testRealTimePolicySync() {
+        Log.d(TAG, "Testing real-time policy sync")
+        
+        val startTime = System.currentTimeMillis()
+        
+        try {
+            // Test policy change listeners
+            var policyChangeReceived = false
+            var receivedDeviceId = ""
+            var receivedPolicy: DevicePolicy? = null
+            
+            val listener: (String, DevicePolicy) -> Unit = { deviceId, policy ->
+                policyChangeReceived = true
+                receivedDeviceId = deviceId
+                receivedPolicy = policy
+            }
+            
+            // Add policy change listener
+            policyEnforcementManager.addPolicyChangeListener(listener)
+            
+            // Apply a new policy to trigger listener
+            val syncTestPolicy = DevicePolicy(
+                id = "sync_test",
+                name = "Real-time Sync Test",
+                installationsBlocked = true,
+                appPolicies = listOf(
+                    AppPolicy.block("com.test.sync", "Sync test block")
+                )
+            )
+            
+            val applyResult = policyEnforcementManager.applyDevicePolicy("sync_test", syncTestPolicy)
+            
+            // Give listener time to fire
+            kotlinx.coroutines.delay(100)
+            
+            // Remove listener
+            policyEnforcementManager.removePolicyChangeListener(listener)
+            
+            // Check policy sync status
+            val syncStatus = policyEnforcementManager.getPolicySyncStatus()
+            
+            val success = applyResult && policyChangeReceived && 
+                         receivedDeviceId == "sync_test" && 
+                         receivedPolicy?.id == "sync_test"
+            
+            testResults.add(TestResult(
+                testName = "Real-time Policy Sync",
+                success = success,
+                details = "Policy applied: $applyResult, Listener fired: $policyChangeReceived, " +
+                         "Correct device: ${receivedDeviceId == "sync_test"}, " +
+                         "Sync status: ${syncStatus["isChildDevice"]}",
+                duration = System.currentTimeMillis() - startTime,
+                category = TestCategory.INTEGRATION
+            ))
+            
+        } catch (e: Exception) {
+            testResults.add(TestResult(
+                testName = "Real-time Policy Sync",
+                success = false,
+                details = "Exception: ${e.message}",
+                duration = System.currentTimeMillis() - startTime,
+                category = TestCategory.INTEGRATION
+            ))
+        }
+    }
     
     // Data classes for test results
     data class TestResult(

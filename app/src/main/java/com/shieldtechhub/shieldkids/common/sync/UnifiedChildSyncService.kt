@@ -3,9 +3,11 @@ package com.shieldtechhub.shieldkids.common.sync
 import android.content.Context
 import android.util.Log
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
+import com.shieldtechhub.shieldkids.common.utils.DeviceRegistrationManager
 import com.shieldtechhub.shieldkids.features.app_management.service.ChildAppSyncService
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import com.shieldtechhub.shieldkids.features.policy.PolicySyncManager
+import com.shieldtechhub.shieldkids.ShieldKidsApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +33,7 @@ class UnifiedChildSyncService(private val context: Context) {
     }
     
     private val deviceStateManager = DeviceStateManager(context)
+    private val deviceRegistrationManager = DeviceRegistrationManager.getInstance(context)
     private val screenTimeService = ScreenTimeService.getInstance(context)
     private val childAppSyncService = ChildAppSyncService.getInstance(context)
     private val policySyncManager = PolicySyncManager.getInstance(context)
@@ -113,6 +116,23 @@ class UnifiedChildSyncService(private val context: Context) {
     private suspend fun performUnifiedSync(childId: String, deviceId: String) {
         val startTime = System.currentTimeMillis()
         Log.d(TAG, "Starting unified sync for child: $childId, device: $deviceId")
+        
+        // Step 0: Check Firebase initialization
+        val app = ShieldKidsApplication.getInstance()
+        if (app == null || !app.isFirebaseReady()) {
+            Log.w(TAG, "Firebase not ready, skipping sync")
+            return
+        }
+        
+        // Step 1: Ensure device document exists
+        Log.d(TAG, "Ensuring device document exists...")
+        if (!deviceRegistrationManager.ensureDeviceDocumentExists()) {
+            Log.e(TAG, "Failed to ensure device document exists, aborting sync")
+            return
+        }
+        
+        // Step 2: Update device heartbeat
+        deviceRegistrationManager.updateDeviceHeartbeat()
         
         var screenTimeSuccess = false
         var appSyncSuccess = false

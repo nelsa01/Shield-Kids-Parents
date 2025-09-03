@@ -31,6 +31,7 @@ class PolicyEnforcementManager(private val context: Context) {
     }
     
     private val deviceAdminManager = DeviceAdminManager(context)
+    private val deviceStateManager = com.shieldtechhub.shieldkids.common.utils.DeviceStateManager(context)
     private val packageManager = context.packageManager
     private val prefs = context.getSharedPreferences(POLICIES_PREF, Context.MODE_PRIVATE)
     
@@ -41,9 +42,55 @@ class PolicyEnforcementManager(private val context: Context) {
     val policyViolations: StateFlow<List<PolicyViolation>> = _policyViolations.asStateFlow()
     
     private var violationListeners = mutableListOf<(PolicyViolation) -> Unit>()
+    private var policyChangeListeners = mutableListOf<(String, DevicePolicy) -> Unit>()
+    
+    private var policySyncManager: PolicySyncManager? = null
     
     init {
         loadStoredPolicies()
+        initializePolicySync()
+    }
+    
+    /**
+     * Initialize policy sync for child devices
+     */
+    private fun initializePolicySync() {
+        if (deviceStateManager.isChildDevice()) {
+            Log.d(TAG, "Initializing policy sync for child device")
+            try {
+                policySyncManager = PolicySyncManager.getInstance(context)
+                policySyncManager?.startPolicySync()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize policy sync", e)
+            }
+        }
+    }
+    
+    /**
+     * Add listener for policy changes
+     */
+    fun addPolicyChangeListener(listener: (String, DevicePolicy) -> Unit) {
+        policyChangeListeners.add(listener)
+    }
+    
+    /**
+     * Remove policy change listener
+     */
+    fun removePolicyChangeListener(listener: (String, DevicePolicy) -> Unit) {
+        policyChangeListeners.remove(listener)
+    }
+    
+    /**
+     * Notify all policy change listeners
+     */
+    private fun notifyPolicyChange(deviceId: String, policy: DevicePolicy) {
+        policyChangeListeners.forEach { listener ->
+            try {
+                listener(deviceId, policy)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in policy change listener", e)
+            }
+        }
     }
     
     // Policy Management
@@ -71,6 +118,9 @@ class PolicyEnforcementManager(private val context: Context) {
             val currentPolicies = _activePolicies.value.toMutableMap()
             currentPolicies[deviceId] = policy
             _activePolicies.value = currentPolicies
+            
+            // Notify policy change listeners
+            notifyPolicyChange(deviceId, policy)
             
             Log.d(TAG, "Device policy applied successfully")
             true
@@ -172,6 +222,35 @@ class PolicyEnforcementManager(private val context: Context) {
     
     fun getTimeLimit(packageName: String): Long {
         return prefs.getLong("time_limit_$packageName", 0)
+    }
+    
+    fun hasExceededTimeLimit(packageName: String): Boolean {
+        val timeLimit = getTimeLimit(packageName)
+        if (timeLimit <= 0) return false
+        
+        return try {
+            val screenTimeCollector = com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector.getInstance(context)
+            val currentUsage = screenTimeCollector.getCurrentAppUsage(packageName)
+            currentUsage >= timeLimit
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to check time limit for $packageName", e)
+            false
+        }
+    }
+    
+    fun getRemainingTime(packageName: String): Long {
+        val timeLimit = getTimeLimit(packageName)
+        if (timeLimit <= 0) return Long.MAX_VALUE
+        
+        return try {
+            val screenTimeCollector = com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector.getInstance(context)
+            val currentUsage = screenTimeCollector.getCurrentAppUsage(packageName)
+            val remaining = timeLimit - currentUsage
+            maxOf(0L, remaining) // Don't return negative values
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get remaining time for $packageName", e)
+            timeLimit
+        }
     }
     
     fun isWithinAllowedTime(packageName: String): Boolean {
@@ -559,5 +638,38 @@ class PolicyEnforcementManager(private val context: Context) {
         intent.putExtra("reason", reason)
         intent.putExtra("timestamp", System.currentTimeMillis())
         context.sendBroadcast(intent)
+    }
+    
+    /**
+     * Clean up resources and stop policy sync
+     */
+    fun cleanup() {
+        try {
+            policySyncManager?.stopPolicySync()
+            policyChangeListeners.clear()
+            violationListeners.clear()
+            
+            Log.d(TAG, "PolicyEnforcementManager cleaned up")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during cleanup", e)
+        }
+    }
+    
+    /**
+     * Get current policy sync status for debugging
+     */
+    fun getPolicySyncStatus(): Map<String, Any> {
+        return try {
+            mapOf(
+                "isChildDevice" to deviceStateManager.isChildDevice(),
+                "activePoliciesCount" to _activePolicies.value.size,
+                "policyChangeListeners" to policyChangeListeners.size,
+                "violationListeners" to violationListeners.size,
+                "syncManagerInitialized" to true
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting sync status", e)
+            mapOf("error" to (e.message ?: "Unknown error"))
+        }
     }
 }

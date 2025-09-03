@@ -93,6 +93,14 @@ class AppManagementActivity : AppCompatActivity() {
             startActivity(intent)
         }
         
+        // Category policies section
+        binding.layoutCategoryPolicies.setOnClickListener {
+            val intent = Intent(this, CategoryPoliciesActivity::class.java)
+            intent.putExtra("deviceId", deviceId)
+            intent.putExtra("childId", childId)
+            startActivity(intent)
+        }
+        
         // View All Apps section
         binding.layoutViewAllApps.setOnClickListener {
             val intent = Intent(this, com.shieldtechhub.shieldkids.features.app_management.AllAppsActivity::class.java)
@@ -138,6 +146,9 @@ class AppManagementActivity : AppCompatActivity() {
                 // Update UI with current policy state
                 updateUIWithPolicy(devicePolicy)
                 
+                // Update category policies status
+                updateCategoryPoliciesStatus()
+                
                 // Load app counts for each category
                 updateCategoryCounts()
                 
@@ -169,6 +180,22 @@ class AppManagementActivity : AppCompatActivity() {
         }
         
         binding.tvScreenTimeStatus.text = status
+    }
+    
+    private fun updateCategoryPoliciesStatus() {
+        val policy = devicePolicy
+        val blockedCategories = policy?.blockedCategories ?: emptyList()
+        val totalCategories = AppCategory.entries.filter { it != AppCategory.OTHER }.size
+        
+        val status = when {
+            blockedCategories.isEmpty() -> "All allowed"
+            blockedCategories.size == totalCategories -> "All blocked"
+            else -> "${blockedCategories.size} blocked"
+        }
+        
+        binding.tvCategoryPoliciesStatus.text = status
+        
+        Log.d("AppManagement", "Category policies status: $status (${blockedCategories.size}/$totalCategories)")
     }
 
     private fun updateUIWithPolicy(policy: DevicePolicy?) {

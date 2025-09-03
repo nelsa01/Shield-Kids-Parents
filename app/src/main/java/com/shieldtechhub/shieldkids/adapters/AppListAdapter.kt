@@ -99,6 +99,12 @@ class AppListAdapter(
                 AppCategory.OTHER -> "Other"
                 AppCategory.BROWSERS -> "Browsers"
                 AppCategory.SHOPPING -> "Shopping"
+                AppCategory.NEWS -> "News"
+                AppCategory.PHOTO_VIDEO -> "Photo & Video"
+                AppCategory.MUSIC -> "Music"
+                AppCategory.HEALTH -> "Health"
+                AppCategory.TRAVEL -> "Travel"
+                AppCategory.FINANCE -> "Finance"
             }
         }
 
@@ -114,6 +120,12 @@ class AppListAdapter(
                 AppCategory.OTHER -> R.drawable.badge_other
                 AppCategory.BROWSERS -> R.drawable.badge_productivity // Reuse productivity badge
                 AppCategory.SHOPPING -> R.drawable.badge_other // Reuse other badge
+                AppCategory.NEWS -> R.drawable.badge_other
+                AppCategory.PHOTO_VIDEO -> R.drawable.badge_entertainment
+                AppCategory.MUSIC -> R.drawable.badge_entertainment
+                AppCategory.HEALTH -> R.drawable.badge_educational
+                AppCategory.TRAVEL -> R.drawable.badge_other
+                AppCategory.FINANCE -> R.drawable.badge_productivity
             }
         }
 
@@ -129,6 +141,12 @@ class AppListAdapter(
                 AppCategory.OTHER -> R.color.gray_600
                 AppCategory.BROWSERS -> R.color.white
                 AppCategory.SHOPPING -> R.color.gray_600
+                AppCategory.NEWS -> R.color.gray_600
+                AppCategory.PHOTO_VIDEO -> R.color.white
+                AppCategory.MUSIC -> R.color.white
+                AppCategory.HEALTH -> R.color.white
+                AppCategory.TRAVEL -> R.color.gray_600
+                AppCategory.FINANCE -> R.color.white
             }
         }
     }

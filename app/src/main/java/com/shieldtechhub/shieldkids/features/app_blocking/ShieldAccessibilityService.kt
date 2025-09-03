@@ -153,10 +153,10 @@ class ShieldAccessibilityService : AccessibilityService() {
                 
                 // Check time-based restrictions
                 if (policyManager.hasTimeLimit(packageName)) {
-                    val currentUsage = screenTimeCollector.getCurrentAppUsage(packageName)
-                    val timeLimit = policyManager.getTimeLimit(packageName)
-                    
-                    if (currentUsage >= timeLimit) {
+                    if (policyManager.hasExceededTimeLimit(packageName)) {
+                        val currentUsage = screenTimeCollector.getCurrentAppUsage(packageName)
+                        val timeLimit = policyManager.getTimeLimit(packageName)
+                        
                         Log.w(TAG, "Time limit exceeded for app: $packageName")
                         
                         blockApp(packageName, "Daily time limit exceeded")
@@ -176,7 +176,17 @@ class ShieldAccessibilityService : AccessibilityService() {
                     }
                 }
                 
-                // If we get here, app is allowed
+                // If we get here, app is allowed - check if we should show warnings
+                if (policyManager.hasTimeLimit(packageName)) {
+                    val remainingTime = policyManager.getRemainingTime(packageName)
+                    val remainingMinutes = remainingTime / (60 * 1000)
+                    
+                    // Show warnings at 30, 15, and 5 minutes remaining
+                    if (remainingMinutes in listOf(30L, 15L, 5L)) {
+                        appBlockingManager.showTimeWarning(packageName, remainingMinutes.toInt())
+                    }
+                }
+                
                 Log.d(TAG, "App allowed: $packageName")
                 
             } catch (e: Exception) {

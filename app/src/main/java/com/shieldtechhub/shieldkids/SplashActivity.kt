@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.SpannableString
 import android.text.style.StyleSpan
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.shieldtechhub.shieldkids.common.utils.PermissionManager
@@ -57,14 +58,20 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun checkParentAuthenticationAndNavigate() {
-        val currentUser = auth.currentUser
-        
-        if (currentUser != null && (currentUser.isEmailVerified || true)) {
-            // Parent is authenticated and email is verified
-            checkPermissionsAndNavigateToMain()
-        } else {
-            // Parent device but not authenticated - go to parent login
-            navigateToParentLogin()
+        try {
+            val currentUser = auth.currentUser
+            
+            if (currentUser != null && (currentUser.isEmailVerified || true)) {
+                // Parent is authenticated and email is verified
+                checkPermissionsAndNavigateToMain()
+            } else {
+                // Parent device but not authenticated - go to parent login
+                navigateToParentLogin()
+            }
+        } catch (e: Exception) {
+            Log.e("Splash", "Firebase Auth error, falling back to role selection", e)
+            // Firebase Auth not ready, fall back to role selection
+            navigateToRoleSelection()
         }
     }
 

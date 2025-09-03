@@ -2,6 +2,8 @@ package com.shieldtechhub.shieldkids
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -65,6 +67,20 @@ class DeviceSettingsActivity : AppCompatActivity() {
                 Toast.makeText(this@DeviceSettingsActivity, "Debug logged - check LogCat for 'ScreenTimeDebug'", Toast.LENGTH_LONG).show()
             }
             true
+        }
+        
+        // Firebase debug - triple tap on device initials
+        var tapCount = 0
+        binding.tvDeviceInitials.setOnClickListener {
+            tapCount++
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (tapCount >= 3) {
+                    // Triple tap detected - open Firebase debug
+                    val intent = Intent(this, com.shieldtechhub.shieldkids.debug.FirebaseDebugActivity::class.java)
+                    startActivity(intent)
+                }
+                tapCount = 0
+            }, 500)
         }
         
         // Set device initials based on device name
