@@ -25,7 +25,10 @@ class AllAppsAdapter(
     
     fun updateAppsWithUsage(newApps: List<AppWithUsage>) {
         apps = newApps
-        notifyDataSetChanged()
+        // Use handler to post update to avoid calling during layout/scrolling
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            notifyDataSetChanged()
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
@@ -48,14 +51,6 @@ class AllAppsAdapter(
                     onAppClick(apps[position])
                 }
             }
-            
-            // Set up toggle switch listener
-            binding.switchBlockApp.setOnCheckedChangeListener { _, isChecked ->
-                val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    onToggleBlock(apps[position], isChecked)
-                }
-            }
         }
 
         fun bind(appWithUsage: AppWithUsage) {
@@ -70,8 +65,19 @@ class AllAppsAdapter(
                 binding.tvUsageTime.text = "No usage data"
             }
             
+            // Temporarily remove listener to prevent unwanted calls during binding
+            binding.switchBlockApp.setOnCheckedChangeListener(null)
+            
             // Set toggle state based on app blocking status
             binding.switchBlockApp.isChecked = appInfo.isBlocked
+            
+            // Restore listener after setting the value
+            binding.switchBlockApp.setOnCheckedChangeListener { _, isChecked ->
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onToggleBlock(apps[position], isChecked)
+                }
+            }
         }
     }
 }

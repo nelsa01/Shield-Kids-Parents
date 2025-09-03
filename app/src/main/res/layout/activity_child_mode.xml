@@ -566,6 +566,24 @@
                     android:textColor="@color/white" />
 
             </LinearLayout>
+            
+            <!-- Policy Status Button Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <Button
+                    android:id="@+id/btnPolicyStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="View Active Policies"
+                    android:textSize="14sp"
+                    android:backgroundTint="@color/teal_700"
+                    android:textColor="@color/white" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

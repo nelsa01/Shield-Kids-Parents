@@ -418,6 +418,11 @@ class ChildModeActivity : AppCompatActivity() {
         binding.btnChildSettings.setOnClickListener {
             showChildSettingsDialog()
         }
+        
+        // Policy Status button
+        binding.btnPolicyStatus.setOnClickListener {
+            startActivity(Intent(this, PolicyStatusActivity::class.java))
+        }
     }
 
     private fun showEmergencyContactDialog() {

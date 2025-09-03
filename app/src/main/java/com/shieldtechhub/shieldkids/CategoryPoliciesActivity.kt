@@ -75,18 +75,22 @@ class CategoryPoliciesActivity : AppCompatActivity() {
     }
     
     private fun loadCurrentPolicy() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val activePolicies = policyManager.activePolicies.value
-                devicePolicy = activePolicies[deviceId] ?: activePolicies["device_$deviceId"]
+                val loadedPolicy = activePolicies[deviceId] ?: activePolicies["device_$deviceId"]
                 
-                Log.d(TAG, "Loaded policy: ${devicePolicy != null}")
-                
-                updateCategoryPoliciesStatus()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    devicePolicy = loadedPolicy
+                    Log.d(TAG, "Loaded policy: ${devicePolicy != null}")
+                    updateCategoryPoliciesStatus()
+                }
                 
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load policy", e)
-                Toast.makeText(this@CategoryPoliciesActivity, "Failed to load policy: ${e.message}", Toast.LENGTH_SHORT).show()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(this@CategoryPoliciesActivity, "Failed to load policy: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -117,51 +121,70 @@ class CategoryPoliciesActivity : AppCompatActivity() {
     private fun toggleCategoryPolicy(categoryPolicy: CategoryPolicyItem) {
         lifecycleScope.launch {
             try {
-                val currentPolicy = devicePolicy ?: DevicePolicy.createDefault(deviceId)
-                val currentBlockedCategories = currentPolicy.blockedCategories.toMutableList()
+                // Update UI immediately for responsiveness
+                categoryPolicy.isBlocked = !categoryPolicy.isBlocked
+                categoryPoliciesAdapter.notifyItemChanged(categoryPolicies.indexOf(categoryPolicy))
+                updateStatusText()
                 
-                if (categoryPolicy.isBlocked) {
-                    // Unblock category
-                    currentBlockedCategories.remove(categoryPolicy.category.name)
-                    categoryPolicy.isBlocked = false
-                    
-                    Toast.makeText(this@CategoryPoliciesActivity, 
-                        "${categoryPolicy.category.displayName} apps are now allowed", Toast.LENGTH_SHORT).show()
+                // Show immediate feedback
+                val message = if (categoryPolicy.isBlocked) {
+                    "${categoryPolicy.category.displayName} apps are now blocked"
                 } else {
-                    // Block category
-                    currentBlockedCategories.add(categoryPolicy.category.name)
-                    categoryPolicy.isBlocked = true
-                    
-                    Toast.makeText(this@CategoryPoliciesActivity, 
-                        "${categoryPolicy.category.displayName} apps are now blocked", Toast.LENGTH_SHORT).show()
+                    "${categoryPolicy.category.displayName} apps are now allowed"
                 }
+                Toast.makeText(this@CategoryPoliciesActivity, message, Toast.LENGTH_SHORT).show()
                 
-                // Update policy
-                val updatedPolicy = currentPolicy.copy(
-                    blockedCategories = currentBlockedCategories
-                )
-                
-                // Apply policy
-                val success = policyManager.applyDevicePolicy(deviceId, updatedPolicy)
-                
-                if (success) {
-                    devicePolicy = updatedPolicy
-                    
-                    // Sync to Firebase for child devices
-                    policySyncManager.savePolicyToFirebase(childId, deviceId, updatedPolicy)
-                    
-                    // Update UI
-                    categoryPoliciesAdapter.notifyDataSetChanged()
-                    updateStatusText()
-                    
-                    Log.i(TAG, "Category policy updated successfully")
-                } else {
-                    // Revert change on failure
-                    categoryPolicy.isBlocked = !categoryPolicy.isBlocked
-                    categoryPoliciesAdapter.notifyDataSetChanged()
-                    
-                    Toast.makeText(this@CategoryPoliciesActivity, 
-                        "Failed to update policy", Toast.LENGTH_SHORT).show()
+                // Perform heavy operations on background thread
+                lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val currentPolicy = devicePolicy ?: DevicePolicy.createDefault(deviceId)
+                        val currentBlockedCategories = currentPolicy.blockedCategories.toMutableList()
+                        
+                        if (categoryPolicy.isBlocked) {
+                            currentBlockedCategories.add(categoryPolicy.category.name)
+                        } else {
+                            currentBlockedCategories.remove(categoryPolicy.category.name)
+                        }
+                        
+                        val updatedPolicy = currentPolicy.copy(
+                            blockedCategories = currentBlockedCategories
+                        )
+                        
+                        // Apply policy on background thread
+                        val success = policyManager.applyDevicePolicy(deviceId, updatedPolicy)
+                        
+                        if (success) {
+                            devicePolicy = updatedPolicy
+                            
+                            // Sync to Firebase on background thread
+                            policySyncManager.savePolicyToFirebase(childId, deviceId, updatedPolicy)
+                            
+                            Log.i(TAG, "Category policy updated successfully")
+                        } else {
+                            // Revert UI change on main thread
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                categoryPolicy.isBlocked = !categoryPolicy.isBlocked
+                                categoryPoliciesAdapter.notifyItemChanged(categoryPolicies.indexOf(categoryPolicy))
+                                updateStatusText()
+                                
+                                Toast.makeText(this@CategoryPoliciesActivity, 
+                                    "Failed to update policy", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to apply category policy", e)
+                        
+                        // Revert UI change on main thread
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            categoryPolicy.isBlocked = !categoryPolicy.isBlocked
+                            categoryPoliciesAdapter.notifyItemChanged(categoryPolicies.indexOf(categoryPolicy))
+                            updateStatusText()
+                            
+                            Toast.makeText(this@CategoryPoliciesActivity, 
+                                "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
                 
             } catch (e: Exception) {
@@ -171,7 +194,8 @@ class CategoryPoliciesActivity : AppCompatActivity() {
                 
                 // Revert UI change
                 categoryPolicy.isBlocked = !categoryPolicy.isBlocked
-                categoryPoliciesAdapter.notifyDataSetChanged()
+                categoryPoliciesAdapter.notifyItemChanged(categoryPolicies.indexOf(categoryPolicy))
+                updateStatusText()
             }
         }
     }

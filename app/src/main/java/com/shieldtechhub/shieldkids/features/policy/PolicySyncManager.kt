@@ -146,55 +146,58 @@ class PolicySyncManager(private val context: Context) {
     private suspend fun handlePolicyUpdate(policyData: Map<String, Any>?) {
         if (policyData == null) return
         
-        try {
-            val policyJson = policyData["policy"] as? String
-            val deviceId = policyData["deviceId"] as? String
-            val version = policyData["version"] as? Long
-            val status = policyData["status"] as? String
-            
-            if (policyJson == null || deviceId == null) {
-                Log.e(TAG, "Invalid policy data received")
-                return
-            }
-            
-            if (status != "active") {
-                Log.d(TAG, "Ignoring inactive policy")
-                return
-            }
-            
-            Log.d(TAG, "Received policy update for device: $deviceId, version: $version")
-            
-            // Check if this is a newer version than what we have locally
-            if (shouldApplyPolicyUpdate(deviceId, version)) {
-                val policy = DevicePolicy.fromJson(policyJson)
+        // Move to background thread to avoid blocking main thread
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val policyJson = policyData["policy"] as? String
+                val deviceId = policyData["deviceId"] as? String
+                val version = policyData["version"] as? Long
+                val status = policyData["status"] as? String
                 
-                // Apply the policy locally
-                val policyManager = PolicyEnforcementManager.getInstance(context)
-                val success = policyManager.applyDevicePolicy(deviceId, policy)
-                
-                if (success) {
-                    Log.i(TAG, "Successfully applied policy update")
-                    
-                    // Save the version locally to avoid reprocessing
-                    savePolicyVersion(deviceId, version)
-                    
-                    // Acknowledge receipt back to Firebase
-                    acknowledgePolicyReceipt(deviceId, version)
-                } else {
-                    Log.e(TAG, "Failed to apply policy update")
-                    reportPolicyError(deviceId, version, "Failed to apply policy locally")
+                if (policyJson == null || deviceId == null) {
+                    Log.e(TAG, "Invalid policy data received")
+                    return@withContext
                 }
-            } else {
-                Log.d(TAG, "Policy update skipped - not newer than current version")
-            }
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling policy update", e)
-            
-            val deviceId = policyData["deviceId"] as? String
-            val version = policyData["version"] as? Long
-            if (deviceId != null && version != null) {
-                reportPolicyError(deviceId, version, e.message ?: "Unknown error")
+                
+                if (status != "active") {
+                    Log.d(TAG, "Ignoring inactive policy")
+                    return@withContext
+                }
+                
+                Log.d(TAG, "Received policy update for device: $deviceId, version: $version")
+                
+                // Check if this is a newer version than what we have locally
+                if (shouldApplyPolicyUpdate(deviceId, version)) {
+                    val policy = DevicePolicy.fromJson(policyJson)
+                    
+                    // Apply the policy locally
+                    val policyManager = PolicyEnforcementManager.getInstance(context)
+                    val success = policyManager.applyDevicePolicy(deviceId, policy)
+                    
+                    if (success) {
+                        Log.i(TAG, "Successfully applied policy update")
+                        
+                        // Save the version locally to avoid reprocessing
+                        savePolicyVersion(deviceId, version)
+                        
+                        // Acknowledge receipt back to Firebase
+                        acknowledgePolicyReceipt(deviceId, version)
+                    } else {
+                        Log.e(TAG, "Failed to apply policy update")
+                        reportPolicyError(deviceId, version, "Failed to apply policy locally")
+                    }
+                } else {
+                    Log.d(TAG, "Policy update skipped - not newer than current version")
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling policy update", e)
+                
+                val deviceId = policyData["deviceId"] as? String
+                val version = policyData["version"] as? Long
+                if (deviceId != null && version != null) {
+                    reportPolicyError(deviceId, version, e.message ?: "Unknown error")
+                }
             }
         }
     }

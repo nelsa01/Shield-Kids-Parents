@@ -214,6 +214,11 @@
             android:name=".debug.FirebaseDebugActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
+        
+        <activity 
+            android:name=".PolicyStatusActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ShieldKids" />
 
         <!-- Installation Blocking Service -->
         <service

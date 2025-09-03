@@ -14,6 +14,10 @@ import com.shieldtechhub.shieldkids.adapters.AllAppsAdapter
 import com.shieldtechhub.shieldkids.databinding.ActivityAllAppsBinding
 import com.shieldtechhub.shieldkids.features.app_management.service.AppCategory
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInfo
+import com.shieldtechhub.shieldkids.features.policy.PolicyEnforcementManager
+import com.shieldtechhub.shieldkids.features.policy.PolicySyncManager
+import com.shieldtechhub.shieldkids.features.policy.model.AppPolicy
+import com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -21,6 +25,8 @@ class AllAppsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAllAppsBinding
     private lateinit var adapter: AllAppsAdapter
+    private lateinit var policyManager: PolicyEnforcementManager
+    private lateinit var policySyncManager: PolicySyncManager
     private val db = FirebaseFirestore.getInstance()
     
     private var deviceId: String = ""
@@ -42,6 +48,10 @@ class AllAppsActivity : AppCompatActivity() {
             finish()
             return
         }
+        
+        // Initialize policy managers
+        policyManager = PolicyEnforcementManager.getInstance(this)
+        policySyncManager = PolicySyncManager.getInstance(this)
         
         setupUI()
         loadChildApps()
@@ -193,22 +203,75 @@ class AllAppsActivity : AppCompatActivity() {
     }
     
     private fun onAppBlockToggled(appInfo: AppInfo, isBlocked: Boolean) {
-        // Handle app blocking toggle
-        val action = if (isBlocked) "blocked" else "unblocked"
-        Toast.makeText(this, "${appInfo.name} has been $action", Toast.LENGTH_SHORT).show()
-        
-        // TODO: Implement actual app blocking logic here
-        // This would typically involve:
-        // 1. Updating the app's blocked status in Firebase
-        // 2. Sending blocking policy to the child device
-        // 3. Updating the local app list
-        
-        // For now, just update the local state
-        val updatedApp = appInfo.copy(isBlocked = isBlocked)
-        val appIndex = allApps.indexOfFirst { it.packageName == appInfo.packageName }
-        if (appIndex != -1) {
-            allApps = allApps.toMutableList().apply { set(appIndex, updatedApp) }
-            filterApps("") // Refresh the filtered list
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Get current device policy
+                val currentPolicy = policyManager.activePolicies.value[deviceId] ?: DevicePolicy.createDefault(deviceId)
+                
+                // Update app policies list
+                val updatedAppPolicies = currentPolicy.appPolicies.toMutableList()
+                val existingIndex = updatedAppPolicies.indexOfFirst { it.packageName == appInfo.packageName }
+                
+                if (isBlocked) {
+                    // Add or update block policy
+                    val blockPolicy = AppPolicy(
+                        packageName = appInfo.packageName,
+                        action = AppPolicy.Action.BLOCK,
+                        isActive = true
+                    )
+                    
+                    if (existingIndex != -1) {
+                        updatedAppPolicies[existingIndex] = blockPolicy
+                    } else {
+                        updatedAppPolicies.add(blockPolicy)
+                    }
+                } else {
+                    // Remove block policy
+                    if (existingIndex != -1) {
+                        updatedAppPolicies.removeAt(existingIndex)
+                    }
+                }
+                
+                // Create updated policy
+                val updatedPolicy = currentPolicy.copy(
+                    appPolicies = updatedAppPolicies,
+                    updatedAt = System.currentTimeMillis()
+                )
+                
+                // Apply policy locally first
+                val localSuccess = policyManager.applyDevicePolicy(deviceId, updatedPolicy)
+                if (localSuccess) {
+                    // Then sync to Firebase
+                    val firebaseSuccess = policySyncManager.savePolicyToFirebase(childId, deviceId, updatedPolicy)
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        val action = if (isBlocked) "blocked" else "unblocked"
+                        if (firebaseSuccess) {
+                            Toast.makeText(this@AllAppsActivity, "${appInfo.name} has been $action", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@AllAppsActivity, "${appInfo.name} $action locally but failed to sync to child device", Toast.LENGTH_LONG).show()
+                        }
+                        
+                        // Update local UI state
+                        val updatedApp = appInfo.copy(isBlocked = isBlocked)
+                        val appIndex = allApps.indexOfFirst { it.packageName == appInfo.packageName }
+                        if (appIndex != -1) {
+                            allApps = allApps.toMutableList().apply { set(appIndex, updatedApp) }
+                            filterApps("") // Refresh the filtered list
+                        }
+                    }
+                } else {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        Toast.makeText(this@AllAppsActivity, "Failed to apply app blocking policy", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                
+            } catch (e: Exception) {
+                Log.e("AllAppsActivity", "Failed to toggle app block", e)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(this@AllAppsActivity, "Error updating app policy: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     

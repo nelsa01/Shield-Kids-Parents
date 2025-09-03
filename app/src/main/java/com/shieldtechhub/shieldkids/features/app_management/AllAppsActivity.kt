@@ -18,6 +18,10 @@ import com.shieldtechhub.shieldkids.features.app_management.service.AppCategory
 import com.shieldtechhub.shieldkids.features.app_management.service.AppInfo
 import com.shieldtechhub.shieldkids.features.app_management.model.AppWithUsage
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
+import com.shieldtechhub.shieldkids.features.policy.PolicyEnforcementManager
+import com.shieldtechhub.shieldkids.features.policy.PolicySyncManager
+import com.shieldtechhub.shieldkids.features.policy.model.AppPolicy
+import com.shieldtechhub.shieldkids.features.policy.model.DevicePolicy
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.Date
@@ -30,6 +34,8 @@ class AllAppsActivity : AppCompatActivity() {
     private lateinit var adapter: AllAppsAdapter
     private val db = FirebaseFirestore.getInstance()
     private lateinit var screenTimeService: ScreenTimeService
+    private lateinit var policyManager: PolicyEnforcementManager
+    private lateinit var policySyncManager: PolicySyncManager
     
     private var deviceId: String = ""
     private var childId: String = ""
@@ -63,6 +69,8 @@ class AllAppsActivity : AppCompatActivity() {
         
         // Initialize services
         screenTimeService = ScreenTimeService.getInstance(this)
+        policyManager = PolicyEnforcementManager.getInstance(this)
+        policySyncManager = PolicySyncManager.getInstance(this)
         
         setupUI()
         loadChildAppsWithUsage()
@@ -253,8 +261,11 @@ class AllAppsActivity : AppCompatActivity() {
                         Log.d(TAG, "Loading usage data for ${appsList.size} apps...")
                         val appsWithUsage = combineAppsWithUsageData(appsList)
                         
+                        // Load policy data and update blocked status
+                        val appsWithPolicyData = combineAppsWithPolicyData(appsWithUsage)
+                        
                         // Sort apps alphabetically
-                        allApps = appsWithUsage.sortedBy { it.appInfo.name.lowercase() }
+                        allApps = appsWithPolicyData.sortedBy { it.appInfo.name.lowercase() }
                         filteredApps = allApps
                         
                         Log.i("AllAppsActivity", "Loaded ${allApps.size} apps from child device (${allApps.count { it.hasUsageData }} with usage data)")
@@ -411,24 +422,100 @@ class AllAppsActivity : AppCompatActivity() {
     private fun onAppBlockToggled(appWithUsage: AppWithUsage, isBlocked: Boolean) {
         val appInfo = appWithUsage.appInfo
         
-        // Handle app blocking toggle
-        val action = if (isBlocked) "blocked" else "unblocked"
-        Toast.makeText(this, "${appInfo.name} has been $action", Toast.LENGTH_SHORT).show()
-        
-        // TODO: Implement actual app blocking logic here
-        // This would typically involve:
-        // 1. Updating the app's blocked status in Firebase
-        // 2. Sending blocking policy to the child device
-        // 3. Updating the local app list
-        
-        // For now, just update the local state
-        val updatedAppInfo = appInfo.copy(isBlocked = isBlocked)
-        val updatedAppWithUsage = appWithUsage.copy(appInfo = updatedAppInfo)
-        
-        val appIndex = allApps.indexOfFirst { it.appInfo.packageName == appInfo.packageName }
+        lifecycleScope.launch {
+            try {
+                // Show immediate feedback
+                val action = if (isBlocked) "blocking" else "unblocking"
+                Toast.makeText(this@AllAppsActivity, "${appInfo.name} is being ${action}...", Toast.LENGTH_SHORT).show()
+                
+                // Perform blocking logic on background thread
+                lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        // 1. Get current device policy
+                        val currentPolicy = policyManager.activePolicies.value[deviceId] 
+                            ?: policyManager.activePolicies.value["device_$deviceId"]
+                            ?: DevicePolicy.createDefault(deviceId)
+                        
+                        // 2. Update app policies
+                        val updatedAppPolicies = currentPolicy.appPolicies.toMutableList()
+                        
+                        // Remove existing policy for this app
+                        updatedAppPolicies.removeAll { it.packageName == appInfo.packageName }
+                        
+                        // Add new policy if blocking
+                        if (isBlocked) {
+                            val appPolicy = AppPolicy(
+                                packageName = appInfo.packageName,
+                                action = AppPolicy.Action.BLOCK,
+                                reason = "Blocked by parent"
+                            )
+                            updatedAppPolicies.add(appPolicy)
+                        }
+                        
+                        // 3. Create updated policy
+                        val updatedPolicy = currentPolicy.copy(
+                            appPolicies = updatedAppPolicies,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        
+                        // 4. Apply policy locally and sync to Firebase
+                        val success = policyManager.applyDevicePolicy(deviceId, updatedPolicy)
+                        
+                        if (success) {
+                            // Sync to child device via Firebase
+                            policySyncManager.savePolicyToFirebase(childId, deviceId, updatedPolicy)
+                            
+                            // Update UI on main thread
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                val finalAction = if (isBlocked) "blocked" else "unblocked"
+                                Toast.makeText(this@AllAppsActivity, "${appInfo.name} has been $finalAction", Toast.LENGTH_SHORT).show()
+                                
+                                // Update local app list
+                                updateLocalAppState(appInfo.packageName, isBlocked)
+                            }
+                            
+                            Log.i(TAG, "App ${appInfo.name} (${appInfo.packageName}) ${if (isBlocked) "blocked" else "unblocked"} successfully")
+                            
+                        } else {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                Toast.makeText(this@AllAppsActivity, "Failed to update ${appInfo.name}", Toast.LENGTH_SHORT).show()
+                                // Revert the switch state
+                                adapter.notifyDataSetChanged()
+                            }
+                        }
+                        
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to toggle app block state", e)
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            Toast.makeText(this@AllAppsActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            // Revert the switch state
+                            adapter.notifyDataSetChanged()
+                        }
+                    }
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to process app block toggle", e)
+                Toast.makeText(this@AllAppsActivity, "Error processing request: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun updateLocalAppState(packageName: String, isBlocked: Boolean) {
+        val appIndex = allApps.indexOfFirst { it.appInfo.packageName == packageName }
         if (appIndex != -1) {
+            val currentApp = allApps[appIndex]
+            val updatedAppInfo = currentApp.appInfo.copy(isBlocked = isBlocked)
+            val updatedAppWithUsage = currentApp.copy(appInfo = updatedAppInfo)
+            
             allApps = allApps.toMutableList().apply { set(appIndex, updatedAppWithUsage) }
-            filterApps("") // Refresh the filtered list
+            
+            // Update filtered list
+            val filteredIndex = filteredApps.indexOfFirst { it.appInfo.packageName == packageName }
+            if (filteredIndex != -1) {
+                filteredApps = filteredApps.toMutableList().apply { set(filteredIndex, updatedAppWithUsage) }
+                adapter.notifyItemChanged(filteredIndex)
+            }
         }
     }
     
@@ -553,6 +640,41 @@ class AllAppsActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("AllAppsActivity", "Firebase debug failed", e)
             }
+        }
+    }
+    
+    /**
+     * Combines apps with policy data to determine blocked status
+     */
+    private fun combineAppsWithPolicyData(apps: List<AppWithUsage>): List<AppWithUsage> {
+        try {
+            // Get current device policy
+            val currentPolicy = policyManager.activePolicies.value[deviceId] 
+                ?: policyManager.activePolicies.value["device_$deviceId"]
+            
+            if (currentPolicy == null) {
+                Log.d(TAG, "No policy found for device $deviceId")
+                return apps
+            }
+            
+            // Create a map of blocked apps
+            val blockedApps = currentPolicy.appPolicies
+                .filter { it.action == AppPolicy.Action.BLOCK }
+                .map { it.packageName }
+                .toSet()
+            
+            Log.d(TAG, "Found ${blockedApps.size} blocked apps in policy")
+            
+            // Update apps with blocked status
+            return apps.map { appWithUsage ->
+                val isBlocked = blockedApps.contains(appWithUsage.appInfo.packageName)
+                val updatedAppInfo = appWithUsage.appInfo.copy(isBlocked = isBlocked)
+                appWithUsage.copy(appInfo = updatedAppInfo)
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to combine apps with policy data", e)
+            return apps
         }
     }
     

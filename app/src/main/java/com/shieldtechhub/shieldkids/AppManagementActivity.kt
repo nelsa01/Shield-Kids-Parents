@@ -131,7 +131,7 @@ class AppManagementActivity : AppCompatActivity() {
     }
     
     private fun loadCurrentPolicy() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 // Load current device policy
                 val activePolicies = policyManager.activePolicies.value
@@ -139,21 +139,27 @@ class AppManagementActivity : AppCompatActivity() {
                 Log.d("AppManagement", "🔍 Available policy keys: ${activePolicies.keys}")
                 
                 // Try both formats for device ID lookup
-                devicePolicy = activePolicies[deviceId] ?: activePolicies["device_$deviceId"]
+                val loadedPolicy = activePolicies[deviceId] ?: activePolicies["device_$deviceId"]
                 
-                Log.d("AppManagement", "🔍 Found policy: ${devicePolicy != null}")
+                Log.d("AppManagement", "🔍 Found policy: ${loadedPolicy != null}")
                 
-                // Update UI with current policy state
-                updateUIWithPolicy(devicePolicy)
-                
-                // Update category policies status
-                updateCategoryPoliciesStatus()
-                
-                // Load app counts for each category
-                updateCategoryCounts()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    devicePolicy = loadedPolicy
+                    
+                    // Update UI with current policy state
+                    updateUIWithPolicy(devicePolicy)
+                    
+                    // Update category policies status
+                    updateCategoryPoliciesStatus()
+                    
+                    // Load app counts for each category
+                    updateCategoryCounts()
+                }
                 
             } catch (e: Exception) {
-                Toast.makeText(this@AppManagementActivity, "Failed to load policy: ${e.message}", Toast.LENGTH_SHORT).show()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(this@AppManagementActivity, "Failed to load policy: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -208,10 +214,19 @@ class AppManagementActivity : AppCompatActivity() {
         binding.switchAppMonitoring.setOnCheckedChangeListener(null)
         
         if (policy != null) {
-            // App monitoring is enabled if we have any app policies
+            // App monitoring is enabled if we have ANY restrictions active
             val hasAppPolicies = policy.appPolicies.isNotEmpty()
-            Log.d("AppManagement", "📱 Policy found with ${policy.appPolicies.size} app policies, monitoring enabled: $hasAppPolicies")
-            binding.switchAppMonitoring.isChecked = hasAppPolicies
+            val hasBlockedCategories = policy.blockedCategories.isNotEmpty()
+            val hasScreenTimeLimits = policy.weekdayScreenTime > 0 || policy.weekendScreenTime > 0
+            val hasBedtimeRestrictions = !policy.bedtimeStart.isNullOrEmpty() && !policy.bedtimeEnd.isNullOrEmpty()
+            val hasDeviceRestrictions = policy.cameraDisabled || policy.installationsBlocked || policy.keyguardRestrictions > 0
+            
+            val isMonitoringActive = hasAppPolicies || hasBlockedCategories || hasScreenTimeLimits || hasBedtimeRestrictions || hasDeviceRestrictions
+            
+            Log.d("AppManagement", "📱 Policy restrictions - Apps: $hasAppPolicies, Categories: $hasBlockedCategories, ScreenTime: $hasScreenTimeLimits, Bedtime: $hasBedtimeRestrictions, Device: $hasDeviceRestrictions")
+            Log.d("AppManagement", "📱 Monitoring active: $isMonitoringActive")
+            
+            binding.switchAppMonitoring.isChecked = isMonitoringActive
             
             // Update exclusions count
             val excludedApps = policy.appPolicies.count { it.action == AppPolicy.Action.ALLOW }
@@ -233,63 +248,9 @@ class AppManagementActivity : AppCompatActivity() {
      * Load child's app inventory from Firebase
      */
     private fun loadChildAppsFromFirebase() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                // binding.progressBar?.visibility = android.view.View.VISIBLE
-                
                 Log.d("AppManagement", "Loading apps for child: $childId, device: $deviceId")
-                
-                // Add initial delay to ensure Firebase is ready
-                kotlinx.coroutines.delay(1000)
-                
-                // Debug: First check if child document exists and what it contains
-                val childDoc = db.collection("children").document(childId).get().await()
-                Log.d("AppManagement", "=== CHILD DOCUMENT DEBUG ===")
-                Log.d("AppManagement", "Child document exists: ${childDoc.exists()}")
-                if (childDoc.exists()) {
-                    Log.d("AppManagement", "Child document data keys: ${childDoc.data?.keys}")
-                    
-                    // Check if devices data is stored directly in the child document
-                    val devicesField = childDoc.data?.get("devices")
-                    if (devicesField != null) {
-                        Log.d("AppManagement", "Found devices field in child document: $devicesField")
-                    }
-                }
-                
-                // Check what's directly under the child document
-                val childCollections = listOf("devices", "device") // Check both possible collection names
-                for (collectionName in childCollections) {
-                    try {
-                        val collection = db.collection("children")
-                            .document(childId)
-                            .collection(collectionName)
-                            .get()
-                            .await()
-                        
-                        Log.d("AppManagement", "Collection '$collectionName' size: ${collection.size()}")
-                        if (collection.size() > 0) {
-                            Log.d("AppManagement", "Documents in '$collectionName': ${collection.documents.map { "${it.id} -> ${it.data?.keys}" }}")
-                        }
-                    } catch (e: Exception) {
-                        Log.d("AppManagement", "Collection '$collectionName' doesn't exist or error: ${e.message}")
-                    }
-                }
-                
-                // Try original approach with devices collection
-                val devicesCollection = db.collection("children")
-                    .document(childId)
-                    .collection("devices")
-                    .get()
-                    .await()
-                
-                Log.d("AppManagement", "Found device documents: ${devicesCollection.documents.map { it.id }}")
-                Log.d("AppManagement", "Looking for deviceId: $deviceId")
-                
-                val actualDeviceId = devicesCollection.documents
-                    .firstOrNull { doc -> doc.id.contains(deviceId) }?.id
-                
-                Log.d("AppManagement", "Matched actual device ID: $actualDeviceId")
-                Log.d("AppManagement", "=== END DEBUG ===")
                 
                 // Use simplified device ID format: device_{deviceId} (no timestamp)
                 val expectedDeviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
@@ -301,7 +262,7 @@ class AppManagementActivity : AppCompatActivity() {
                     .collection("data")
                     .document("appInventory")
                 
-                Log.d("AppManagement", "Using simplified path: children/$childId/devices/$expectedDeviceDocId/data/appInventory")
+                Log.d("AppManagement", "Using path: children/$childId/devices/$expectedDeviceDocId/data/appInventory")
                 
                 val snapshot = appInventoryRef.get().await()
                 
@@ -309,14 +270,16 @@ class AppManagementActivity : AppCompatActivity() {
                 
                 if (!snapshot.exists()) {
                     Log.w("AppManagement", "App inventory document not found")
-                    showChildAppsNotAvailable()
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        showChildAppsNotAvailable()
+                    }
                     return@launch
                 }
                 
                 val appsData = snapshot.get("apps") as? List<Map<String, Any>>
                 
                 if (appsData != null) {
-                    childApps = appsData.mapNotNull { appData ->
+                    val loadedApps = appsData.mapNotNull { appData ->
                         try {
                             AppInfo(
                                 packageName = appData["packageName"] as? String ?: "",
@@ -341,24 +304,29 @@ class AppManagementActivity : AppCompatActivity() {
                         }
                     }
                     
-                    Log.i("AppManagement", "Loaded ${childApps.size} apps from child device")
-                    updateCategoryCounts()
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        childApps = loadedApps
+                        Log.i("AppManagement", "Loaded ${childApps.size} apps from child device")
+                        updateCategoryCounts()
+                    }
                     
                     // Load screen time data if available
                     loadChildScreenTimeData(snapshot)
                     
                 } else {
                     Log.w("AppManagement", "No apps data found in Firebase")
-                    childApps = emptyList()
-                    showChildAppsNotAvailable()
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        childApps = emptyList()
+                        showChildAppsNotAvailable()
+                    }
                 }
                 
             } catch (e: Exception) {
                 Log.e("AppManagement", "Failed to load child apps from Firebase", e)
-                Toast.makeText(this@AppManagementActivity, "Failed to load child's apps: ${e.message}", Toast.LENGTH_SHORT).show()
-                childApps = emptyList()
-            } finally {
-                // binding.progressBar?.visibility = android.view.View.GONE
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(this@AppManagementActivity, "Failed to load child's apps: ${e.message}", Toast.LENGTH_SHORT).show()
+                    childApps = emptyList()
+                }
             }
         }
     }
@@ -470,29 +438,43 @@ class AppManagementActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 if (enabled) {
-                    // Create basic device policy with app monitoring enabled
-                    val policy = devicePolicy ?: DevicePolicy(
-                        id = "policy_$deviceId",
-                        name = "Default Policy",
-                        appPolicies = listOf(),
-                        cameraDisabled = false,
-                        installationsBlocked = false,
-                        keyguardRestrictions = 0,
-                        passwordPolicy = null
-                    )
+                    // Show immediate feedback
+                    Toast.makeText(this@AppManagementActivity, "Enabling app monitoring...", Toast.LENGTH_SHORT).show()
                     
-                    // Save policy to Firebase for child device to receive
-                    val success = policySyncManager.savePolicyToFirebase(childId, deviceId, policy)
-                    if (success) {
-                        devicePolicy = policy
-                        
-                        // Policy is now stored via PolicySyncManager and will be applied on child device
-                        
-                        Toast.makeText(this@AppManagementActivity, "App monitoring enabled and sent to child device", Toast.LENGTH_SHORT).show()
-                        Log.i("AppManagement", "Policy sent to Firebase for child: $childId, device: $deviceId")
-                    } else {
-                        binding.switchAppMonitoring.isChecked = false
-                        Toast.makeText(this@AppManagementActivity, "Failed to enable monitoring - could not sync to child device", Toast.LENGTH_LONG).show()
+                    // Perform heavy operations on background thread
+                    lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                        try {
+                            // Preserve existing policy restrictions or create new one with defaults
+                            val policy = devicePolicy ?: DevicePolicy.createDefault(deviceId)
+                            
+                            // Apply policy locally first
+                            val localSuccess = policyManager.applyDevicePolicy(deviceId, policy)
+                            if (localSuccess) {
+                                // Then sync to Firebase for child device to receive
+                                val firebaseSuccess = policySyncManager.savePolicyToFirebase(childId, deviceId, policy)
+                                
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                    if (firebaseSuccess) {
+                                        devicePolicy = policy
+                                        Toast.makeText(this@AppManagementActivity, "App monitoring enabled", Toast.LENGTH_SHORT).show()
+                                        Log.i("AppManagement", "Policy applied locally and sent to Firebase for child: $childId, device: $deviceId")
+                                    } else {
+                                        Toast.makeText(this@AppManagementActivity, "Settings saved locally but failed to sync to child device", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            } else {
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                    binding.switchAppMonitoring.isChecked = false
+                                    Toast.makeText(this@AppManagementActivity, "Failed to apply policy locally", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            
+                        } catch (e: Exception) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                binding.switchAppMonitoring.isChecked = false
+                                Toast.makeText(this@AppManagementActivity, "Failed to update monitoring: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 } else {
                     // Disable app monitoring by clearing policies
