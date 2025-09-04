@@ -17,6 +17,7 @@ import com.shieldtechhub.shieldkids.adapters.TopAppsAdapter
 import com.shieldtechhub.shieldkids.adapters.TopAppItem
 import com.shieldtechhub.shieldkids.debug.ScreenTimeDebugHelper
 import com.shieldtechhub.shieldkids.debug.DeviceIdDebugHelper
+import com.shieldtechhub.shieldkids.common.utils.DeviceCleanupManager
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -58,13 +59,33 @@ class DeviceSettingsActivity : AppCompatActivity() {
         // Set device email (placeholder for now)
         binding.tvDeviceEmail.text = "device@shieldtechclub.com"
         
-        // Add debug functionality - long click on device name for debug
+        // Add debug functionality - long click on device name for screen time debug
         binding.tvDeviceName.setOnLongClickListener {
             Log.d(TAG, "🐛 MANUAL DEBUG TRIGGER - Long click on device name")
             lifecycleScope.launch {
                 val debugResults = ScreenTimeDebugHelper.debugFirebaseScreenTimeAccess(childId, deviceId)
                 Log.d(TAG, "🐛 MANUAL DEBUG RESULTS:\n$debugResults")
                 Toast.makeText(this@DeviceSettingsActivity, "Debug logged - check LogCat for 'ScreenTimeDebug'", Toast.LENGTH_LONG).show()
+            }
+            true
+        }
+        
+        // Device cleanup - long click on device email for cleanup
+        binding.tvDeviceEmail.setOnLongClickListener { _ ->
+            lifecycleScope.launch {
+                try {
+                    val cleanupManager = DeviceCleanupManager.getInstance(this@DeviceSettingsActivity)
+                    val report = cleanupManager.cleanupDuplicateDevices()
+                    
+                    AlertDialog.Builder(this@DeviceSettingsActivity)
+                        .setTitle("Device Cleanup Complete")
+                        .setMessage(report)
+                        .setPositiveButton("OK", null)
+                        .show()
+                        
+                } catch (e: Exception) {
+                    Toast.makeText(this@DeviceSettingsActivity, "Cleanup failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
             true
         }

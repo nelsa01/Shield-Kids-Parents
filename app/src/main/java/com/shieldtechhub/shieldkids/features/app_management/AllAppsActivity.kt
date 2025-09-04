@@ -479,8 +479,14 @@ class AllAppsActivity : AppCompatActivity() {
                         } else {
                             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                 Toast.makeText(this@AllAppsActivity, "Failed to update ${appInfo.name}", Toast.LENGTH_SHORT).show()
-                                // Revert the switch state
-                                adapter.notifyDataSetChanged()
+                                // Revert the switch state - use deferred notification
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    try {
+                                        adapter.notifyDataSetChanged()
+                                    } catch (e: Exception) {
+                                        android.util.Log.w("AllAppsActivity", "Failed to notify adapter on error", e)
+                                    }
+                                }, 100)
                             }
                         }
                         
@@ -488,8 +494,14 @@ class AllAppsActivity : AppCompatActivity() {
                         Log.e(TAG, "Failed to toggle app block state", e)
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             Toast.makeText(this@AllAppsActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                            // Revert the switch state
-                            adapter.notifyDataSetChanged()
+                            // Revert the switch state - use deferred notification
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                try {
+                                    adapter.notifyDataSetChanged()
+                                } catch (e: Exception) {
+                                    android.util.Log.w("AllAppsActivity", "Failed to notify adapter on error", e)
+                                }
+                            }, 100)
                         }
                     }
                 }
@@ -514,7 +526,22 @@ class AllAppsActivity : AppCompatActivity() {
             val filteredIndex = filteredApps.indexOfFirst { it.appInfo.packageName == packageName }
             if (filteredIndex != -1) {
                 filteredApps = filteredApps.toMutableList().apply { set(filteredIndex, updatedAppWithUsage) }
-                adapter.notifyItemChanged(filteredIndex)
+                
+                // Use handler to defer the notification to avoid RecyclerView layout issues
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    try {
+                        adapter.notifyItemChanged(filteredIndex)
+                    } catch (e: IllegalStateException) {
+                        // If RecyclerView is computing layout, use full refresh
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            try {
+                                adapter.notifyDataSetChanged()
+                            } catch (e2: Exception) {
+                                android.util.Log.w("AllAppsActivity", "Failed to notify adapter change", e2)
+                            }
+                        }, 100)
+                    }
+                }
             }
         }
     }

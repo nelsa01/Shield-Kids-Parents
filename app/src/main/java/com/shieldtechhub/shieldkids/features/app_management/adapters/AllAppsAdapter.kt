@@ -27,7 +27,19 @@ class AllAppsAdapter(
         apps = newApps
         // Use handler to post update to avoid calling during layout/scrolling
         android.os.Handler(android.os.Looper.getMainLooper()).post {
-            notifyDataSetChanged()
+            try {
+                notifyDataSetChanged()
+            } catch (e: IllegalStateException) {
+                // If RecyclerView is still computing layout, try again later
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    try {
+                        notifyDataSetChanged()
+                    } catch (e2: Exception) {
+                        // Last resort - ignore if still failing
+                        android.util.Log.w("AllAppsAdapter", "Failed to notify data change", e2)
+                    }
+                }, 100)
+            }
         }
     }
 
@@ -75,7 +87,10 @@ class AllAppsAdapter(
             binding.switchBlockApp.setOnCheckedChangeListener { _, isChecked ->
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onToggleBlock(apps[position], isChecked)
+                    // Post the toggle action to avoid issues during layout computation
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onToggleBlock(apps[position], isChecked)
+                    }
                 }
             }
         }
