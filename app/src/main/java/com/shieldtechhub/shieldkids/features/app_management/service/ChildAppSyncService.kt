@@ -8,7 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import com.shieldtechhub.shieldkids.common.utils.DeviceRegistrationManager
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeCollector
-import com.shieldtechhub.shieldkids.ShieldKidsApplication
+import com.shieldtechhub.shieldkids.features.core.ShieldKidsApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

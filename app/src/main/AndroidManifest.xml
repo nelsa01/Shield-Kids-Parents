@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name=".ShieldKidsApplication"
+        android:name=".features.core.ShieldKidsApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -29,7 +29,7 @@
         android:theme="@style/Theme.ShieldKids">
 
         <service
-            android:name=".MessagingService"
+            android:name=".features.core.MessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -111,7 +111,7 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <activity android:name=".SplashActivity"
+        <activity android:name=".features.onboarding.ui.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.ShieldKids">
             <intent-filter>
@@ -119,37 +119,38 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".PasscodeActivity" />
+        <activity android:name=".features.settings.PasscodeActivity" />
 
-        <activity android:name=".RoleSelectionActivity" />
-        <activity android:name=".ParentRegisterActivity" />
-        <activity android:name=".ParentDashboardActivity" />
-        <activity android:name=".ParentLoginActivity" />
-        <activity android:name=".OnboardingActivity" />
-        <activity android:name=".PasswordResetActivity" />
-        <activity android:name=".SettingsActivity" />
-        <activity android:name=".AddChildActivity" />
-        <activity android:name=".ChildConnectActivity" />
-        <activity android:name=".ChildDetailActivity" />
-        <activity android:name=".AddDeviceActivity" />
-        <activity android:name=".WaitingForSetupActivity" />
-        <activity android:name=".DeviceSetupActivity" />
-        <activity android:name=".DeviceSettingsActivity" />
-        <activity android:name=".DeviceAdminSetupActivity" />
-        <activity android:name=".SystemTestActivity" />
-        <activity android:name=".PermissionRequestActivity" />
-        <activity android:name=".AppListActivity" />
-        <activity android:name=".ChildModeActivity" />
-        <activity android:name=".ChildDeviceLinkingActivity" />
+        <activity android:name=".features.authentication.RoleSelectionActivity" />
+        <activity android:name=".features.authentication.ParentRegisterActivity" />
+        <activity android:name=".features.dashboard.ParentDashboardActivity" />
+        <activity android:name=".features.authentication.ParentLoginActivity" />
+        <activity android:name=".features.onboarding.ui.OnboardingActivity" />
+        <activity android:name=".features.authentication.PasswordResetActivity" />
+        <activity android:name=".features.authentication.VerifyEmailActivity" />
+        <activity android:name=".features.settings.SettingsActivity" />
+        <activity android:name=".features.child_management.ui.AddChildActivity" />
+        <activity android:name=".features.child_management.ui.ChildConnectActivity" />
+        <activity android:name=".features.child_management.ui.ChildDetailActivity" />
+        <activity android:name=".features.device_setup.ui.AddDeviceActivity" />
+        <activity android:name=".features.device_setup.ui.WaitingForSetupActivity" />
+        <activity android:name=".features.device_setup.ui.DeviceSetupActivity" />
+        <activity android:name=".features.settings.DeviceSettingsActivity" />
+        <activity android:name=".features.device_setup.ui.DeviceAdminSetupActivity" />
+        <activity android:name=".debug.SystemTestActivity" />
+        <activity android:name=".features.device_setup.ui.PermissionRequestActivity" />
+        <activity android:name=".features.app_management.ui.AppListActivity" />
+        <activity android:name=".features.child_management.ui.ChildModeActivity" />
+        <activity android:name=".features.child_management.ui.ChildDeviceLinkingActivity" />
         
         <!-- App Management Activities -->
         <activity 
-            android:name=".AppManagementActivity"
+            android:name=".features.app_management.ui.AppManagementActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
         <activity 
-            android:name=".CategoryPoliciesActivity"
+            android:name=".features.policy.ui.CategoryPoliciesActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
@@ -159,29 +160,29 @@
             android:theme="@style/Theme.ShieldKids" />
             
         <activity 
-            android:name=".AppExclusionsActivity"
+            android:name=".features.app_management.ui.AppExclusionsActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
         <activity 
-            android:name=".CategoryPolicyActivity"
+            android:name=".features.policy.ui.CategoryPolicyActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
         <activity 
-            android:name=".DeviceScreenTimeActivity"
+            android:name=".features.screen_time.ui.DeviceScreenTimeActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
         
         <!-- Policy Test Activity - Only for testing/debug builds -->
         <activity 
-            android:name=".PolicyTestActivity"
+            android:name=".features.policy.ui.PolicyTestActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
         <!-- Policy Debug Activity - For debugging policy enforcement -->
         <activity 
-            android:name=".PolicyDebugActivity"
+            android:name=".features.policy.ui.PolicyDebugActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
             
@@ -216,7 +217,7 @@
             android:theme="@style/Theme.ShieldKids" />
         
         <activity 
-            android:name=".PolicyStatusActivity"
+            android:name=".features.policy.ui.PolicyStatusActivity"
             android:exported="false"
             android:theme="@style/Theme.ShieldKids" />
 

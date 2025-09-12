@@ -3,7 +3,7 @@ package com.shieldtechhub.shieldkids.common.utils
 import android.content.Context
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
-import com.shieldtechhub.shieldkids.ShieldKidsApplication
+import com.shieldtechhub.shieldkids.features.core.ShieldKidsApplication
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
