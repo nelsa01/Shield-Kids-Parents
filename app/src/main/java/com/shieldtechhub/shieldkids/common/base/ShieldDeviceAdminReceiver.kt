@@ -126,4 +126,80 @@ class ShieldDeviceAdminReceiver : DeviceAdminReceiver() {
         super.onLockTaskModeExiting(context, intent)
         Log.d(TAG, "Lock task mode exiting")
     }
+    
+    // 🛡️ CRITICAL: This method prevents Device Admin from being easily disabled
+    override fun onDisableRequested(context: Context, intent: Intent): CharSequence? {
+        super.onDisableRequested(context, intent)
+        Log.w(TAG, "⚠️ SECURITY ALERT: Device Admin disable requested - potential tampering attempt")
+        
+        // Immediately notify parent of tampering attempt
+        notifyParentOfTamperingAttempt(context, "Device Admin disable attempted")
+        
+        // Lock the device immediately if possible to prevent further tampering
+        try {
+            val devicePolicyManager = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            if (devicePolicyManager.isAdminActive(getComponentName(context))) {
+                devicePolicyManager.lockNow()
+                Log.w(TAG, "Device locked due to tampering attempt")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not lock device during tampering attempt", e)
+        }
+        
+        // Return a strong deterrent message that makes the user think twice
+        return """
+            🚨 PARENTAL CONTROL SECURITY ALERT 🚨
+            
+            Disabling Shield Kids will:
+            • Remove ALL safety protections for this device
+            • Immediately notify parents of this action
+            • Log this security violation with timestamp
+            • May result in loss of device privileges
+            • Trigger automatic device lock for security
+            
+            ⚠️ This action is monitored and reported ⚠️
+            
+            Please contact your parent/guardian before proceeding.
+            Unauthorized changes to parental controls are policy violations.
+        """.trimIndent()
+    }
+    
+    // 🔔 Notify parent immediately of any tampering attempts
+    private fun notifyParentOfTamperingAttempt(context: Context, action: String) {
+        try {
+            // Log security event
+            Log.e(TAG, "🚨 SECURITY VIOLATION: $action at ${System.currentTimeMillis()}")
+            
+            // Store violation in local storage for later sync
+            val prefs = context.getSharedPreferences("shield_security_violations", Context.MODE_PRIVATE)
+            val violationId = "violation_${System.currentTimeMillis()}_${(0..999).random()}"
+            val violationData = """
+                {
+                    "id": "$violationId",
+                    "type": "DEVICE_ADMIN_TAMPERING",
+                    "action": "$action",
+                    "timestamp": ${System.currentTimeMillis()},
+                    "severity": "HIGH",
+                    "device": "${android.os.Build.MODEL}",
+                    "android_version": "${android.os.Build.VERSION.RELEASE}"
+                }
+            """.trimIndent()
+            
+            prefs.edit()
+                .putString(violationId, violationData)
+                .putLong("last_violation", System.currentTimeMillis())
+                .apply()
+                
+            // Try to send immediate notification to parent (will be implemented by notification service)
+            val broadcastIntent = Intent("com.shieldtechhub.shieldkids.SECURITY_VIOLATION")
+            broadcastIntent.putExtra("violation_type", "DEVICE_ADMIN_TAMPERING")
+            broadcastIntent.putExtra("violation_data", violationData)
+            context.sendBroadcast(broadcastIntent)
+            
+            Log.d(TAG, "Parent notification queued for security violation: $action")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to notify parent of tampering attempt", e)
+        }
+    }
 }

@@ -41,11 +41,18 @@ class ShieldKidsApplication : Application() {
             
             // Configure Firestore settings for better offline support
             val firestore = FirebaseFirestore.getInstance()
-            val settings = FirebaseFirestoreSettings.Builder()
-                .setPersistenceEnabled(true)  // Enable offline persistence
-                .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
-                .build()
-            firestore.firestoreSettings = settings
+            
+            // Modern approach: Firestore automatically handles offline persistence and caching
+            // The deprecated setPersistenceEnabled and setCacheSizeBytes methods are no longer needed
+            // Firestore SDK now manages offline data efficiently by default
+            
+            try {
+                // Ensure network connectivity for Firestore
+                firestore.enableNetwork()
+                Log.d(TAG, "Firestore network connectivity enabled")
+            } catch (e: Exception) {
+                Log.w(TAG, "Firestore network already enabled or error occurred", e)
+            }
             
             // Ensure auth instance is ready
             val auth = FirebaseAuth.getInstance()
