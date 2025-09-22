@@ -125,35 +125,57 @@ class PolicyStatusActivity : AppCompatActivity() {
         binding.tvDeviceId.text = "Device ID: ${deviceInfo.deviceId}"
         binding.tvChildId.text = "Child ID: ${deviceInfo.childId}"
         
+        // Firebase path info for debugging
+        val deviceDocId = if (deviceInfo.deviceId.startsWith("device_")) deviceInfo.deviceId else "device_${deviceInfo.deviceId}"
+        val firebasePath = "children/${deviceInfo.childId}/devices/$deviceDocId/data/policy"
+        
+        // Add Firebase path debugging
+        val policyItems = mutableListOf<PolicyStatusItem>()
+        policyItems.add(PolicyStatusItem.Header("Firebase Debug Info"))
+        policyItems.add(PolicyStatusItem.Info("Policy Path", firebasePath))
+        policyItems.add(PolicyStatusItem.Info("Device Type", if (deviceStateManager.isChildDevice()) "Child Device" else "Not Child Device"))
+        
         // Sync status
         val isListening = syncStatus["isListening"] as? Boolean ?: false
         val currentVersion = syncStatus["currentVersion"] as? Long ?: 0L
         val lastAppliedAt = syncStatus["lastAppliedAt"] as? Long ?: 0L
+        val isChildDevice = syncStatus["isChildDevice"] as? Boolean ?: false
+        
+        policyItems.add(PolicyStatusItem.Header("Sync Status"))
+        policyItems.add(PolicyStatusItem.Info("Listener Active", if (isListening) "✅ Yes" else "❌ No"))
+        policyItems.add(PolicyStatusItem.Info("Child Device", if (isChildDevice) "✅ Yes" else "❌ No"))
+        policyItems.add(PolicyStatusItem.Info("Policy Version", currentVersion.toString()))
+        
+        val lastUpdatedText = if (lastAppliedAt > 0) {
+            val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
+            dateFormat.format(Date(lastAppliedAt))
+        } else "Never"
+        policyItems.add(PolicyStatusItem.Info("Last Applied", lastUpdatedText))
         
         binding.tvSyncStatus.text = if (isListening) "Status: Listening for policy updates" else "Status: Not listening for updates"
         binding.tvPolicyVersion.text = "Policy Version: $currentVersion"
-        
-        if (lastAppliedAt > 0) {
-            val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
-            binding.tvLastUpdated.text = "Last Updated: ${dateFormat.format(Date(lastAppliedAt))}"
-        } else {
-            binding.tvLastUpdated.text = "Last Updated: Never"
-        }
+        binding.tvLastUpdated.text = "Last Updated: $lastUpdatedText"
         
         // Policy details
         if (policy != null) {
             binding.layoutNoPolicies.visibility = android.view.View.GONE
             binding.layoutPolicyDetails.visibility = android.view.View.VISIBLE
             
-            showPolicyDetails(policy)
+            showPolicyDetails(policy, policyItems)
         } else {
             binding.layoutNoPolicies.visibility = android.view.View.VISIBLE
             binding.layoutPolicyDetails.visibility = android.view.View.GONE
+            
+            // Still show debug info even without policy
+            policyItems.add(PolicyStatusItem.Header("No Policy Found"))
+            policyItems.add(PolicyStatusItem.Info("Status", "❌ No policy retrieved from Firebase"))
+            policyItems.add(PolicyStatusItem.Info("Action", "Click 'Sync Policies' to try fetching from Firebase"))
+            adapter.updateItems(policyItems)
         }
     }
     
-    private fun showPolicyDetails(policy: DevicePolicy) {
-        val policyItems = mutableListOf<PolicyStatusItem>()
+    private fun showPolicyDetails(policy: DevicePolicy, existingItems: MutableList<PolicyStatusItem>) {
+        val policyItems = existingItems
         
         // Debug logging
         Log.d(TAG, "=== POLICY DEBUG ===")
@@ -342,35 +364,61 @@ class PolicyStatusActivity : AppCompatActivity() {
                 
                 Log.d(TAG, "Manual sync initiated")
                 
-                // Start policy sync
-                policySyncManager.startPolicySync()
-                
-                // Also try to fetch current policy from Firebase manually
                 val deviceInfo = deviceStateManager.getChildDeviceInfo()
                 if (deviceInfo != null) {
-                    Log.d(TAG, "Attempting to fetch policy from Firebase for device: ${deviceInfo.deviceId}")
+                    Log.d(TAG, "=== FIREBASE SYNC DEBUG ===")
+                    Log.d(TAG, "Device ID: ${deviceInfo.deviceId}")
+                    Log.d(TAG, "Child ID: ${deviceInfo.childId}")
+                    Log.d(TAG, "Firebase path: children/${deviceInfo.childId}/devices/${deviceInfo.deviceId}/data/policy")
+                    
+                    // Start policy sync listener
+                    policySyncManager.startPolicySync()
+                    
+                    // Try to fetch current policy from Firebase manually
+                    Log.d(TAG, "Attempting to fetch policy from Firebase...")
                     val firebasePolicy = policySyncManager.fetchCurrentPolicy(deviceInfo.deviceId)
                     Log.d(TAG, "Fetched policy from Firebase: ${firebasePolicy != null}")
+                    
                     if (firebasePolicy != null) {
+                        Log.d(TAG, "✅ SUCCESS: Found policy in Firebase")
                         Log.d(TAG, "Firebase policy details:")
                         Log.d(TAG, "  - Name: ${firebasePolicy.name}")
+                        Log.d(TAG, "  - Active: ${firebasePolicy.isActive}")
                         Log.d(TAG, "  - App Policies: ${firebasePolicy.appPolicies.size}")
                         Log.d(TAG, "  - Blocked Categories: ${firebasePolicy.blockedCategories}")
                         Log.d(TAG, "  - Screen Time: weekday=${firebasePolicy.weekdayScreenTime}, weekend=${firebasePolicy.weekendScreenTime}")
+                        Log.d(TAG, "  - Bedtime: ${firebasePolicy.bedtimeStart} - ${firebasePolicy.bedtimeEnd}")
+                        
+                        // Apply the policy immediately
+                        val policyManager = PolicyEnforcementManager.getInstance(this@PolicyStatusActivity)
+                        val applied = policyManager.applyDevicePolicy(deviceInfo.deviceId, firebasePolicy)
+                        Log.d(TAG, "Policy applied locally: $applied")
+                        
+                        android.widget.Toast.makeText(this@PolicyStatusActivity, 
+                            "✅ Policy found and applied from Firebase", android.widget.Toast.LENGTH_LONG).show()
+                    } else {
+                        Log.w(TAG, "❌ No policy found in Firebase")
+                        Log.w(TAG, "Check if parent has saved policy to:")
+                        Log.w(TAG, "  children/${deviceInfo.childId}/devices/${deviceInfo.deviceId}/data/policy")
+                        
+                        android.widget.Toast.makeText(this@PolicyStatusActivity, 
+                            "❌ No policy found in Firebase. Check parent app.", android.widget.Toast.LENGTH_LONG).show()
                     }
+                    Log.d(TAG, "=============================")
+                } else {
+                    Log.e(TAG, "Cannot sync - device not registered as child device")
+                    android.widget.Toast.makeText(this@PolicyStatusActivity, 
+                        "Device not linked as child device", android.widget.Toast.LENGTH_LONG).show()
                 }
                 
                 // Wait a moment then reload
                 kotlinx.coroutines.delay(2000)
                 loadPolicyStatus()
                 
-                android.widget.Toast.makeText(this@PolicyStatusActivity, 
-                    "Policy sync initiated", android.widget.Toast.LENGTH_SHORT).show()
-                
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to sync policies", e)
                 android.widget.Toast.makeText(this@PolicyStatusActivity, 
-                    "Sync failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                    "Sync failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
             } finally {
                 binding.btnSyncPolicies.isEnabled = true
                 binding.btnSyncPolicies.text = "Sync Policies"
