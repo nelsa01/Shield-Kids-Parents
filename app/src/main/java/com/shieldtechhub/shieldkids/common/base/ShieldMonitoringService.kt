@@ -12,6 +12,7 @@ import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeColle
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import com.shieldtechhub.shieldkids.common.sync.UnifiedChildSyncService
+import com.shieldtechhub.shieldkids.features.dashboard.ParentDashboardActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -98,7 +99,7 @@ class ShieldMonitoringService : Service() {
     }
     
     private fun createNotification(): Notification {
-        val notificationIntent = Intent(this, com.shieldtechhub.shieldkids.ParentDashboardActivity::class.java)
+        val notificationIntent = Intent(this, ParentDashboardActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

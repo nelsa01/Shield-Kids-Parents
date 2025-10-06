@@ -5,7 +5,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.shieldtechhub.shieldkids.R
-import com.shieldtechhub.shieldkids.ShieldKidsApplication
+import com.shieldtechhub.shieldkids.features.core.ShieldKidsApplication
 import com.shieldtechhub.shieldkids.common.utils.DeviceRegistrationManager
 import com.shieldtechhub.shieldkids.common.utils.DeviceStateManager
 import kotlinx.coroutines.launch

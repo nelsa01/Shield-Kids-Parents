@@ -7,7 +7,7 @@ import com.shieldtechhub.shieldkids.common.utils.DeviceRegistrationManager
 import com.shieldtechhub.shieldkids.features.app_management.service.ChildAppSyncService
 import com.shieldtechhub.shieldkids.features.screen_time.service.ScreenTimeService
 import com.shieldtechhub.shieldkids.features.policy.PolicySyncManager
-import com.shieldtechhub.shieldkids.ShieldKidsApplication
+import com.shieldtechhub.shieldkids.features.core.ShieldKidsApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

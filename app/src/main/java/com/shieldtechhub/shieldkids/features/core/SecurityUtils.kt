@@ -1,0 +1,25 @@
+package com.shieldtechhub.shieldkids.features.core
+
+import java.security.MessageDigest
+import java.util.*
+
+object SecurityUtils {
+    fun generateRefNumber(): String {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        val random = Random()
+        return (1..6)
+            .map { chars[random.nextInt(chars.length)] }
+            .joinToString("")
+    }
+
+    fun hashRefNumber(refNumber: String): String {
+        val bytes = refNumber.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        return digest.fold("") { str, it -> str + "%02x".format(it) }
+    }
+
+    fun verifyRefNumber(input: String, storedHash: String): Boolean {
+        return hashRefNumber(input) == storedHash
+    }
+}

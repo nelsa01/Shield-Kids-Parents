@@ -46,6 +46,10 @@ class PolicyEnforcementManager(private val context: Context) {
     
     private var policySyncManager: PolicySyncManager? = null
     
+    // Track when we last warned about system app status to avoid spam
+    private var lastSystemAppWarning = 0L
+    private val SYSTEM_APP_WARNING_COOLDOWN = 24 * 60 * 60 * 1000L // 24 hours
+    
     init {
         loadStoredPolicies()
         initializePolicySync()
@@ -506,13 +510,20 @@ class PolicyEnforcementManager(private val context: Context) {
             val appInfo = packageManager.getApplicationInfo(context.packageName, 0)
             if ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0) {
                 // App is not system app - could be vulnerable to uninstallation
-                Log.w(TAG, "⚠️ Security Warning: Shield Kids is not installed as a system app")
-                Log.w(TAG, "This may allow the child to uninstall the app and bypass parental controls")
-                Log.w(TAG, "For maximum security, consider installing as a system app or using device management")
+                val currentTime = System.currentTimeMillis()
                 
-                // Report this security concern to parent
-                reportViolation("system", ViolationType.POLICY_TAMPERING, 
-                    "Shield Kids not installed as system app - may be vulnerable to uninstallation")
+                // Only warn once per cooldown period to avoid log spam
+                if (currentTime - lastSystemAppWarning > SYSTEM_APP_WARNING_COOLDOWN) {
+                    Log.w(TAG, "⚠️ Security Warning: Shield Kids is not installed as a system app")
+                    Log.w(TAG, "This may allow the child to uninstall the app and bypass parental controls")
+                    Log.w(TAG, "For maximum security, consider installing as a system app or using device management")
+                    
+                    // Report this security concern to parent (once per day)
+                    reportViolation("system", ViolationType.POLICY_TAMPERING, 
+                        "Shield Kids not installed as system app - may be vulnerable to uninstallation")
+                    
+                    lastSystemAppWarning = currentTime
+                }
             }
             
             true

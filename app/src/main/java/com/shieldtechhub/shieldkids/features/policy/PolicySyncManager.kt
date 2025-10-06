@@ -112,9 +112,15 @@ class PolicySyncManager(private val context: Context) {
         
         Log.i(TAG, "Starting policy sync for device: ${childInfo.deviceId}")
         
-        // Listen for policy changes
-        policyListener = db.collection("policies")
-            .document(childInfo.deviceId)
+        // Listen for policy changes from the actual save location
+        val deviceDocId = if (childInfo.deviceId.startsWith("device_")) childInfo.deviceId else "device_${childInfo.deviceId}"
+        
+        policyListener = db.collection("children")
+            .document(childInfo.childId)
+            .collection("devices")
+            .document(deviceDocId)
+            .collection("data")
+            .document("policy")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "Error listening for policy updates", error)
@@ -126,7 +132,7 @@ class PolicySyncManager(private val context: Context) {
                         handlePolicyUpdate(snapshot.data)
                     }
                 } else {
-                    Log.d(TAG, "No policy found for this device")
+                    Log.d(TAG, "No policy found for this device at: children/${childInfo.childId}/devices/$deviceDocId/data/policy")
                 }
             }
     }
@@ -232,14 +238,25 @@ class PolicySyncManager(private val context: Context) {
      */
     private suspend fun acknowledgePolicyReceipt(deviceId: String, version: Long?) {
         try {
+            val childInfo = deviceStateManager.getChildDeviceInfo()
+            if (childInfo == null) {
+                Log.w(TAG, "Cannot acknowledge policy - child device info not found")
+                return
+            }
+            
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
             val ackData = mapOf(
                 "acknowledgedAt" to System.currentTimeMillis(),
                 "acknowledgedVersion" to version,
                 "deviceStatus" to "policy_applied"
             )
             
-            db.collection("policies")
-                .document(deviceId)
+            db.collection("children")
+                .document(childInfo.childId)
+                .collection("devices")
+                .document(deviceDocId)
+                .collection("data")
+                .document("policy")
                 .update(ackData)
                 .await()
             
@@ -255,6 +272,13 @@ class PolicySyncManager(private val context: Context) {
      */
     private suspend fun reportPolicyError(deviceId: String, version: Long?, error: String) {
         try {
+            val childInfo = deviceStateManager.getChildDeviceInfo()
+            if (childInfo == null) {
+                Log.w(TAG, "Cannot report policy error - child device info not found")
+                return
+            }
+            
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
             val errorData = mapOf(
                 "lastError" to error,
                 "lastErrorAt" to System.currentTimeMillis(),
@@ -262,8 +286,12 @@ class PolicySyncManager(private val context: Context) {
                 "deviceStatus" to "policy_error"
             )
             
-            db.collection("policies")
-                .document(deviceId)
+            db.collection("children")
+                .document(childInfo.childId)
+                .collection("devices")
+                .document(deviceDocId)
+                .collection("data")
+                .document("policy")
                 .update(errorData)
                 .await()
             
@@ -279,8 +307,21 @@ class PolicySyncManager(private val context: Context) {
      */
     suspend fun fetchCurrentPolicy(deviceId: String): DevicePolicy? {
         return try {
-            val snapshot = db.collection("policies")
-                .document(deviceId)
+            // Try to get child device info to access the correct path
+            val childInfo = deviceStateManager.getChildDeviceInfo()
+            if (childInfo == null) {
+                Log.e(TAG, "Cannot fetch policy - child device info not found")
+                return null
+            }
+            
+            val deviceDocId = if (deviceId.startsWith("device_")) deviceId else "device_$deviceId"
+            
+            val snapshot = db.collection("children")
+                .document(childInfo.childId)
+                .collection("devices")
+                .document(deviceDocId)
+                .collection("data")
+                .document("policy")
                 .get()
                 .await()
             
@@ -291,7 +332,10 @@ class PolicySyncManager(private val context: Context) {
                 if (policyJson != null && status == "active") {
                     DevicePolicy.fromJson(policyJson)
                 } else null
-            } else null
+            } else {
+                Log.d(TAG, "No policy found at: children/${childInfo.childId}/devices/$deviceDocId/data/policy")
+                null
+            }
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch current policy", e)
